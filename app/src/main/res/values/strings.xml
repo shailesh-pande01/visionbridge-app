@@ -1,0 +1,246 @@
+<resources>
+    <string name="app_name">VisionBridge</string>
+    <string name="tagline">AI-powered accessibility companion</string>
+
+    <!-- Common -->
+    <string name="common_back">Back</string>
+    <string name="common_home">Home</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_retry">Try Again</string>
+    <string name="common_loading">Loading…</string>
+    <string name="common_stop">Stop</string>
+    <string name="common_replay">Read Again</string>
+    <string name="common_close">Close</string>
+    <string name="common_save">Save</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_submit">Submit</string>
+    <string name="common_confirm">Confirm</string>
+
+    <!-- Auth -->
+    <string name="auth_login_title">Login to VisionBridge</string>
+    <string name="auth_register_title">Join VisionBridge</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_confirm_password">Confirm Password</string>
+    <string name="auth_full_name">Full Name</string>
+    <string name="auth_login_button">Login</string>
+    <string name="auth_register_button">Register</string>
+    <string name="auth_no_account">Don\'t have an account? Register</string>
+    <string name="auth_have_account">Already have an account? Login</string>
+    <string name="auth_role_prompt">Select your role:</string>
+    <string name="auth_role_low_vision">Low-Vision User</string>
+    <string name="auth_role_low_vision_desc">AI visual assistance, voice navigation, emergency SOS, and volunteer help.</string>
+    <string name="auth_role_volunteer">Volunteer</string>
+    <string name="auth_role_volunteer_desc">Help low-vision users by accepting real-time assistance video calls.</string>
+    <string name="auth_logout">Logout</string>
+
+    <!-- Language -->
+    <string name="language_label">Language</string>
+    <string name="language_en">English</string>
+    <string name="language_hi">हिन्दी</string>
+    <string name="language_mr">मराठी</string>
+
+    <!-- Home & Navigation -->
+    <string name="home_title">VisionBridge</string>
+    <string name="home_quick_actions">Quick Actions</string>
+    <string name="home_support_emergency">Support &amp; Emergency</string>
+    <string name="voice_tap_to_speak">Tap to speak or hold</string>
+    <string name="voice_listening">Listening — say “Vision”</string>
+    <string name="voice_processing">Understanding…</string>
+    <string name="voice_hint">Say “Vision”, then ask for any feature.</string>
+
+    <!-- Feature Names & Subtitles -->
+    <string name="feature_reading">Read Text</string>
+    <string name="feature_reading_sub">Point camera at menus, signs, labels</string>
+
+    <string name="feature_surroundings">Describe Surroundings</string>
+    <string name="feature_surroundings_sub">Describe what is in front of you</string>
+
+    <string name="feature_hazard">Hazard Mode</string>
+    <string name="feature_hazard_sub">Continuous background obstacle detection</string>
+
+    <string name="feature_currency">Currency Reader</string>
+    <string name="feature_currency_sub">Identify notes, coins, and total amount</string>
+
+    <string name="feature_transport">Public Transport</string>
+    <string name="feature_transport_sub">Identify buses, trains, platforms, signs</string>
+
+    <string name="feature_finder">Smart Object Finder</string>
+    <string name="feature_finder_sub">Locate your wallet, keys, bottles, etc.</string>
+
+    <string name="feature_location">Where Am I?</string>
+    <string name="feature_location_sub">Get your current street and nearby places</string>
+
+    <string name="feature_volunteer">Volunteer Help</string>
+    <string name="feature_volunteer_sub">Connect with a sighted volunteer</string>
+
+    <string name="feature_sos">Emergency SOS</string>
+    <string name="feature_sos_sub">Send immediate distress alert &amp; GPS</string>
+
+    <string name="feature_entertainment">Entertainment Hub</string>
+    <string name="feature_entertainment_sub">Live Radio, Stories, Audio Games &amp; Daily Streak</string>
+    <string name="feature_radio">Live Radio</string>
+    <string name="feature_stories">Stories &amp; Audiobooks</string>
+    <string name="feature_games">Audio Games</string>
+    <string name="feature_progress">My Progress</string>
+
+    <!-- Camera / General Actions -->
+    <string name="camera_tap_to_capture">Tap to Capture</string>
+    <string name="camera_scan_again">Scan Again</string>
+    <string name="camera_permission_required">Camera permission is required to capture scenes.</string>
+    <string name="camera_permission_grant">Allow Camera</string>
+    <string name="mic_permission_required">Microphone permission is required for voice commands.</string>
+    <string name="mic_permission_grant">Allow Microphone</string>
+    <string name="location_permission_required">Location permission is needed for navigation assistance.</string>
+    <string name="location_permission_grant">Allow Location</string>
+
+    <!-- Smart Reading -->
+    <string name="reading_extracted_text">Extracted Text</string>
+    <string name="reading_no_text">No readable text found in this image.</string>
+    <string name="reading_hint">Point camera at a sign, label, menu, or document</string>
+
+    <!-- Surroundings & Hazard -->
+    <string name="surroundings_scene">Scene Detected</string>
+    <string name="surroundings_obstacles">Obstacles</string>
+    <string name="surroundings_objects">Objects</string>
+    <string name="hazard_active">🚨 Hazard Scanning Live</string>
+    <string name="hazard_start">Start Hazard Mode</string>
+    <string name="hazard_stop">Stop Hazard Mode</string>
+    <string name="hazard_no_change">Path clear. No significant change.</string>
+
+    <!-- Currency -->
+    <string name="currency_total">Total: %1$s</string>
+    <string name="currency_breakdown">Denomination Breakdown</string>
+    <string name="currency_no_currency">No currency clearly identified.</string>
+
+    <!-- Transport -->
+    <string name="transport_info">Transport Information</string>
+    <string name="transport_type">Type: %1$s</string>
+    <string name="transport_destination">Destination: %1$s</string>
+    <string name="transport_not_found">No transportation or sign information found.</string>
+
+    <!-- Object Finder -->
+    <string name="finder_target_prompt">What object are you looking for?</string>
+    <string name="finder_target_hint">e.g. wallet, keys, phone, water bottle</string>
+    <string name="finder_searching_for">Searching for: %1$s</string>
+    <string name="finder_found">✅ %1$s Found!</string>
+    <string name="finder_not_found">❌ %1$s not found in view.</string>
+    <string name="finder_direction">Direction: %1$s</string>
+    <string name="finder_distance">Distance: %1$s</string>
+    <string name="finder_reference">Near: %1$s</string>
+
+    <!-- Where Am I -->
+    <string name="location_summary">Location Summary</string>
+    <string name="location_address">Address: %1$s</string>
+    <string name="location_nearby_places">Nearby Places</string>
+    <string name="location_finding">Finding your location…</string>
+
+    <!-- Volunteer low-vision user -->
+    <string name="volunteer_locating">Detecting location and requesting volunteer…</string>
+    <string name="volunteer_searching">Finding an available volunteer…</string>
+    <string name="volunteer_searching_desc">Your request has been broadcast. Call will start automatically once accepted.</string>
+    <string name="volunteer_cancel_request">Cancel Request</string>
+    <string name="volunteer_accepted_connecting">Volunteer accepted! Connecting call…</string>
+    <string name="volunteer_call_connected">Connected to volunteer. Volunteer can see your camera and hear you.</string>
+    <string name="volunteer_end_call">End Call</string>
+    <string name="volunteer_no_volunteers">No volunteers are currently available. Please try again in a moment.</string>
+
+    <!-- Volunteer Dashboard (Volunteer role) -->
+    <string name="volunteer_dashboard_title">Volunteer Dashboard</string>
+    <string name="volunteer_pending_requests">Pending Help Requests</string>
+    <string name="volunteer_no_pending">No active help requests right now.</string>
+    <string name="volunteer_accept_btn">🤝 Accept &amp; Assist</string>
+    <string name="volunteer_complete_btn">✓ Complete Assistance</string>
+
+    <!-- Emergency SOS -->
+    <string name="sos_countdown_title">Emergency SOS Triggered</string>
+    <string name="sos_countdown_sub">Sending emergency alert in %1$d seconds…</string>
+    <string name="sos_cancel_alert">Cancel SOS</string>
+    <string name="sos_send_now">Send Now</string>
+    <string name="sos_active_title">🚨 SOS ALERT ACTIVE</string>
+    <string name="sos_active_desc">Emergency event created and WhatsApp alert dispatched to trusted contacts with your live GPS location.</string>
+    <string name="sos_whatsapp_sent">WhatsApp alert: Sent ✓</string>
+    <string name="sos_whatsapp_failed">WhatsApp alert: Delivery pending or failed</string>
+    <string name="sos_end_emergency">End Emergency Mode</string>
+    <string name="sos_contacts_title">Trusted Contacts</string>
+    <string name="sos_add_contact">Add Contact</string>
+    <string name="sos_contact_name">Name</string>
+    <string name="sos_contact_phone">Phone</string>
+    <string name="sos_contact_relation">Relationship (Family, Doctor, Friend)</string>
+    <string name="sos_no_contacts">No emergency contacts saved yet.</string>
+
+    <!-- Confidence / Volunteer Handoff -->
+    <string name="confidence_low_prompt">I\'m not confident enough to answer this accurately.</string>
+    <string name="confidence_ask_volunteer">Would you like to connect with a volunteer for assistance?</string>
+    <string name="confidence_connect_volunteer">🤝 Connect with Volunteer</string>
+    <string name="confidence_try_again">📷 Try Camera Again</string>
+
+    <!-- VisionBridge Live & AI Voice Call -->
+    <string name="feature_live_vision">VisionBridge Live</string>
+    <string name="feature_live_vision_sub">Real-time AI camera + voice vision assistant</string>
+    <string name="feature_voice_call">AI Voice Call</string>
+    <string name="feature_voice_call_sub">Real-time conversational AI voice assistant</string>
+
+    <string name="live_vision_title">VisionBridge Live</string>
+    <string name="live_vision_subtitle">Real-time multimodal visual accessibility assistant</string>
+    <string name="live_status_starting">Starting Live…</string>
+    <string name="live_status_connecting">Connecting to Gemini Live…</string>
+    <string name="live_status_listening">Listening</string>
+    <string name="live_status_thinking">Thinking…</string>
+    <string name="live_status_reading">Reading Text…</string>
+    <string name="live_status_speaking">Speaking</string>
+    <string name="live_status_reconnecting">Reconnecting…</string>
+    <string name="live_status_muted">Microphone Muted</string>
+    <string name="live_status_error">Connection Error</string>
+    <string name="live_status_stopped">Live Stopped</string>
+    <string name="live_start">Start Live</string>
+    <string name="live_stop">Stop Live</string>
+    <string name="live_tap_to_start">Tap to Start Live</string>
+    <string name="live_tap_to_stop">Tap to Stop Live</string>
+    <string name="live_mute">Mute</string>
+    <string name="live_unmute">Unmute</string>
+    <string name="live_switch_camera">Flip Camera</string>
+    <string name="live_interrupt">Interrupt</string>
+    <string name="live_tap_to_interrupt">Tap or speak to interrupt</string>
+    <string name="live_mode_fast">⚡ Fast Live</string>
+    <string name="live_mode_high_detail">📖 High-Detail Read</string>
+    <string name="live_fallback_title">Or use standard vision features</string>
+    <string name="live_rear_camera">Rear Camera</string>
+    <string name="live_front_camera">Front Camera</string>
+    <string name="live_prompt_front">What is in front of me?</string>
+    <string name="live_prompt_read">Read all visible text on screen.</string>
+    <string name="live_prompt_hazard">Is there any hazard ahead?</string>
+    <string name="live_prompt_price">What is the price or number?</string>
+
+    <string name="voice_call_title">AI Voice Call</string>
+    <string name="voice_call_subtitle">Real-time conversational voice assistant</string>
+    <string name="voice_call_status_starting">Starting Call…</string>
+    <string name="voice_call_status_connecting">Connecting Call…</string>
+    <string name="voice_call_status_listening">Listening</string>
+    <string name="voice_call_status_thinking">Thinking…</string>
+    <string name="voice_call_status_speaking">Speaking</string>
+    <string name="voice_call_status_muted">Muted</string>
+    <string name="voice_call_status_reconnecting">Reconnecting…</string>
+    <string name="voice_call_status_error">Call Error</string>
+    <string name="voice_call_status_stopped">Call Ended</string>
+    <string name="voice_call_start">Start Call</string>
+    <string name="voice_call_end">End Call</string>
+    <string name="voice_call_tap_to_start">Tap to Start Call</string>
+    <string name="voice_call_tap_to_end">Tap to End Call</string>
+    <string name="voice_call_mute">Mute</string>
+    <string name="voice_call_unmute">Unmute</string>
+    <string name="voice_call_interrupt">Interrupt</string>
+    <string name="voice_call_switch_to_live">Vision Live</string>
+    <string name="voice_call_hint_speak">Speak naturally to ask anything</string>
+    <string name="voice_call_hint_interrupt">Tap or speak to interrupt</string>
+    <string name="voice_call_hint_muted">Microphone is muted — tap to unmute</string>
+    <string name="voice_call_voice_only_badge">Audio Call (Camera Off)</string>
+    <string name="voice_call_need_vision_title">Need Visual Assistance?</string>
+    <string name="voice_call_need_vision_desc">Switch to VisionBridge Live so the AI can see through your camera.</string>
+    <string name="voice_call_open_live">Open Vision Live</string>
+    <string name="voice_call_prompt_news">What\'s in the news today?</string>
+    <string name="voice_call_prompt_tech">Explain quantum computing simply.</string>
+    <string name="voice_call_prompt_capital">What is the capital of Australia?</string>
+    <string name="voice_call_prompt_day">Help me plan my day.</string>
+    <string name="voice_call_prompt_fact">Tell me a fun technology fact.</string>
+</resources>
