@@ -49,7 +49,11 @@ class EmergencyContactsViewModel(application: Application) : AndroidViewModel(ap
 
     fun loadContacts() {
         val user = sessionManager.currentUser.value
-        val userId = user?.id ?: "emergency-user"
+        if (user == null || user.id.isBlank()) {
+            _isLoading.value = false
+            return
+        }
+        val userId = user.id
 
         _isLoading.value = true
         viewModelScope.launch {
@@ -64,8 +68,8 @@ class EmergencyContactsViewModel(application: Application) : AndroidViewModel(ap
     }
 
     fun addContact(name: String, phone: String, relationship: String) {
-        val user = sessionManager.currentUser.value
-        val userId = user?.id ?: "emergency-user"
+        val user = sessionManager.currentUser.value ?: return
+        val userId = user.id
 
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -104,22 +108,19 @@ fun EmergencyContactsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.sos_contacts_title), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
-                },
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.sos_contacts_title),
+                subtitle = stringResource(R.string.sos_contacts_subtitle),
+                onBack = onBack,
+                backContentDescription = stringResource(R.string.common_back),
                 actions = {
-                    TextButton(onClick = { showAddDialog = true }) {
-                        Text("+ Add", color = Accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    TextButton(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text("+ " + stringResource(R.string.common_add), color = Accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                }
             )
         },
         containerColor = BgPrimary

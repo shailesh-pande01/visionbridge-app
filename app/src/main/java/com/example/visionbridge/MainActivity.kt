@@ -15,7 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,29 +27,37 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.visionbridge.api.AuthApi
+import com.example.visionbridge.data.AuthState
 import com.example.visionbridge.data.ContextMemoryManager
 import com.example.visionbridge.data.SessionManager
 import com.example.visionbridge.ui.components.VoiceStatusBar
 import com.example.visionbridge.ui.screens.HomeScreen
 import com.example.visionbridge.ui.screens.SmartReadingScreen
+import com.example.visionbridge.ui.screens.SplashScreen
 import com.example.visionbridge.ui.screens.auth.AuthScreen
+import com.example.visionbridge.ui.screens.calling.CallingAssistantScreen
 import com.example.visionbridge.ui.screens.currency.CurrencyReaderScreen
 import com.example.visionbridge.ui.screens.emergency.EmergencyContactsScreen
 import com.example.visionbridge.ui.screens.emergency.EmergencySosScreen
-import com.example.visionbridge.ui.screens.finder.ObjectFinderScreen
-import com.example.visionbridge.ui.screens.hazard.HazardModeScreen
-import com.example.visionbridge.ui.screens.location.LocationAssistantScreen
-import com.example.visionbridge.ui.screens.surroundings.SurroundingsScreen
-import com.example.visionbridge.ui.screens.transport.TransportAssistantScreen
-import com.example.visionbridge.ui.screens.volunteer.VolunteerDashboardScreen
-import com.example.visionbridge.ui.screens.volunteer.VolunteerHelpScreen
 import com.example.visionbridge.ui.screens.entertainment.EntertainmentHomeScreen
 import com.example.visionbridge.ui.screens.entertainment.GamesScreen
 import com.example.visionbridge.ui.screens.entertainment.ProgressScreen
 import com.example.visionbridge.ui.screens.entertainment.RadioScreen
 import com.example.visionbridge.ui.screens.entertainment.StoryScreen
+import com.example.visionbridge.ui.screens.finder.ObjectFinderScreen
 import com.example.visionbridge.ui.screens.live.VisionLiveScreen
 import com.example.visionbridge.ui.screens.live.VoiceCallScreen
+import com.example.visionbridge.ui.screens.location.LocationAssistantScreen
+import com.example.visionbridge.ui.screens.news.NewsAssistantScreen
+import com.example.visionbridge.ui.screens.surroundings.SurroundingsScreen
+import com.example.visionbridge.ui.screens.transport.TransportAssistantScreen
+import com.example.visionbridge.ui.screens.volunteer.VolunteerDashboardScreen
+import com.example.visionbridge.ui.screens.volunteer.VolunteerHelpScreen
+import com.example.visionbridge.gesture.GestureController
+import com.example.visionbridge.gesture.twoFingerDoubleTapGesture
+import com.example.visionbridge.ui.screens.admin.AdminDashboardScreen
+import com.example.visionbridge.ui.screens.admin.AdminLoginScreen
 import com.example.visionbridge.ui.theme.BgPrimary
 import com.example.visionbridge.ui.theme.VisionbridgeTheme
 import com.example.visionbridge.voice.VoiceManager
@@ -67,11 +77,13 @@ class MainActivity : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         VoiceManager.getInstance(this).onActivityPause()
+        GestureController.getInstance(this).onPause()
     }
 
     override fun onResume() {
         super.onResume()
         VoiceManager.getInstance(this).onActivityResume()
+        GestureController.getInstance(this).onResume()
     }
 }
 
@@ -80,13 +92,17 @@ fun VisionBridgeApp() {
     val context = LocalContext.current
     val navController = rememberNavController()
     val sessionManager = remember { SessionManager.getInstance(context) }
+    val authApi = remember { AuthApi(context) }
     val currentUser by sessionManager.currentUser.collectAsStateWithLifecycle()
+    val authState by sessionManager.authState.collectAsStateWithLifecycle()
 
     val voiceManager = remember { VoiceManager.getInstance(context) }
     val voiceState by voiceManager.voiceState.collectAsStateWithLifecycle()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: ""
+
+    var sessionExpiredMessage by remember { mutableStateOf<String?>(null) }
 
     // Connect voice navigation
     LaunchedEffect(navController) {
@@ -105,6 +121,18 @@ fun VisionBridgeApp() {
         }
     }
 
+    // Global session expiry watcher
+    LaunchedEffect(authState) {
+        if (authState is AuthState.SessionExpired) {
+            sessionExpiredMessage = (authState as AuthState.SessionExpired).message
+            voiceManager.stopVoice()
+            ContextMemoryManager.reset()
+            navController.navigate("auth") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     // Keep ContextMemoryManager active screen synced and coordinate voice manager
     LaunchedEffect(currentRoute) {
         val screenId = when {
@@ -112,7 +140,6 @@ fun VisionBridgeApp() {
             currentRoute.startsWith("voice_call") -> "voiceCall"
             currentRoute.startsWith("reading") -> "reading"
             currentRoute.startsWith("surroundings") -> "surroundings"
-            currentRoute.startsWith("hazard") -> "hazard"
             currentRoute.startsWith("currency") -> "currency"
             currentRoute.startsWith("transport") -> "transport"
             currentRoute.startsWith("finder") -> "objectFinder"
@@ -124,6 +151,9 @@ fun VisionBridgeApp() {
             currentRoute.startsWith("stories") -> "stories"
             currentRoute.startsWith("games") -> "games"
             currentRoute.startsWith("progress") -> "progress"
+            currentRoute.startsWith("calling") -> "calling"
+            currentRoute.startsWith("news") -> "news"
+            currentRoute.startsWith("admin") -> "admin"
             else -> "home"
         }
         ContextMemoryManager.setActiveScreen(screenId)
@@ -131,53 +161,116 @@ fun VisionBridgeApp() {
         // Pause ambient speech recognition when inside Live sessions to prevent mic contention
         if (currentRoute == "live_vision" || currentRoute == "voice_call") {
             voiceManager.pauseForCall()
-        } else if (currentRoute != "volunteer") {
+        } else if (currentRoute != "volunteer" && currentRoute != "auth" && currentRoute != "splash" && !currentRoute.startsWith("admin")) {
             voiceManager.resumeAfterCall()
         }
     }
 
-    val startDest = when {
-        currentUser == null -> "auth"
-        currentUser?.role == "volunteer" -> "volunteer_dashboard"
-        else -> "home"
-    }
-
     val showVoiceBar = currentUser != null &&
             currentUser?.role != "volunteer" &&
+            currentUser?.role != "admin" &&
+            currentRoute != "splash" &&
             currentRoute != "auth" &&
+            currentRoute != "admin_login" &&
+            currentRoute != "admin_dashboard" &&
             currentRoute != "volunteer_dashboard" &&
             currentRoute != "live_vision" &&
             currentRoute != "voice_call"
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = BgPrimary,
-        bottomBar = {
-            if (showVoiceBar) {
-                VoiceStatusBar(
-                    voiceState = voiceState,
-                    onActivate = { voiceManager.activateVoice() },
-                    onStop = { voiceManager.stopVoice() }
-                )
-            }
+    val currentLanguage by sessionManager.language.collectAsStateWithLifecycle()
+    val locale = remember(currentLanguage) { com.example.visionbridge.utils.LocaleHelper.getLocale(currentLanguage) }
+    val configuration = remember(currentLanguage, locale) {
+        android.content.res.Configuration(context.resources.configuration).apply {
+            com.example.visionbridge.utils.LocaleHelper.applyLocaleToConfiguration(this, locale)
         }
-    ) { innerPadding ->
-        Box(
+    }
+    val localizedContext = remember(context, currentLanguage, locale) {
+        com.example.visionbridge.utils.LocaleHelper.wrapContext(context, currentLanguage)
+    }
+
+    val activity = context as? androidx.activity.ComponentActivity
+
+    val gestureController = remember { GestureController.getInstance(context) }
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalConfiguration provides configuration,
+        androidx.compose.ui.platform.LocalContext provides localizedContext,
+        *buildList {
+            if (activity != null) {
+                add(androidx.activity.compose.LocalActivityResultRegistryOwner provides activity)
+                add(androidx.activity.compose.LocalOnBackPressedDispatcherOwner provides activity)
+            }
+        }.toTypedArray()
+    ) {
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(BgPrimary)
-        ) {
-            NavHost(
-                navController = navController,
-                startDestination = startDest,
-                modifier = Modifier.fillMaxSize()
+                .twoFingerDoubleTapGesture {
+                    gestureController.onTwoFingerDoubleTap()
+                },
+            containerColor = BgPrimary,
+            bottomBar = {
+                if (showVoiceBar) {
+                    VoiceStatusBar(
+                        voiceState = voiceState,
+                        onActivate = { voiceManager.activateVoice() },
+                        onStop = { voiceManager.stopVoice() }
+                    )
+                }
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(BgPrimary)
             ) {
+                NavHost(
+                    navController = navController,
+                    startDestination = "splash",
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                // 0. Startup Splash & Session Check Gate
+                composable("splash") {
+                    SplashScreen(
+                        onSessionValid = { user ->
+                            if (user.role == "admin") {
+                                navController.navigate("admin_dashboard") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else if (user.role == "volunteer") {
+                                navController.navigate("volunteer_dashboard") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("home") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            }
+                        },
+                        onSessionInvalid = { errorNotice ->
+                            sessionExpiredMessage = errorNotice
+                            navController.navigate("auth") {
+                                popUpTo("splash") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
                 // Auth Screen
                 composable("auth") {
                     AuthScreen(
+                        sessionExpiredNotice = sessionExpiredMessage,
+                        onNavigateAdminLogin = {
+                            navController.navigate("admin_login")
+                        },
                         onAuthSuccess = { user ->
-                            if (user.role == "volunteer") {
+                            sessionExpiredMessage = null
+                            if (user.role == "admin") {
+                                navController.navigate("admin_dashboard") {
+                                    popUpTo("auth") { inclusive = true }
+                                }
+                            } else if (user.role == "volunteer") {
                                 navController.navigate("volunteer_dashboard") {
                                     popUpTo("auth") { inclusive = true }
                                 }
@@ -195,8 +288,11 @@ fun VisionBridgeApp() {
                     HomeScreen(
                         onNavigate = { route -> navController.navigate(route) },
                         onLogout = {
+                            voiceManager.stopVoice()
+                            authApi.logout()
+                            ContextMemoryManager.reset()
                             navController.navigate("auth") {
-                                popUpTo("home") { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
                         }
                     )
@@ -234,19 +330,11 @@ fun VisionBridgeApp() {
                 composable("surroundings") {
                     SurroundingsScreen(
                         onBack = { navController.popBackStack() },
-                        onNavigateHazard = { navController.navigate("hazard") },
                         onVolunteerHelp = { navController.navigate("volunteer") }
                     )
                 }
 
-                // 3. Hazard Mode
-                composable("hazard") {
-                    HazardModeScreen(
-                        onBack = { navController.popBackStack() }
-                    )
-                }
-
-                // 4. Currency Reader
+                // 3. Currency Reader
                 composable("currency") {
                     CurrencyReaderScreen(
                         onBack = { navController.popBackStack() },
@@ -312,8 +400,11 @@ fun VisionBridgeApp() {
                 composable("volunteer_dashboard") {
                     VolunteerDashboardScreen(
                         onLogout = {
+                            voiceManager.stopVoice()
+                            authApi.logout()
+                            ContextMemoryManager.reset()
                             navController.navigate("auth") {
-                                popUpTo("volunteer_dashboard") { inclusive = true }
+                                popUpTo(0) { inclusive = true }
                             }
                         }
                     )
@@ -369,7 +460,68 @@ fun VisionBridgeApp() {
                         onBack = { navController.popBackStack() }
                     )
                 }
+
+                // 17. Accessible Phone Calling Assistant
+                composable("calling") {
+                    CallingAssistantScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                // 18. Daily News Assistant
+                composable("news") {
+                    NewsAssistantScreen(
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                // 19. Dedicated Admin Login Gate
+                composable("admin_login") {
+                    AdminLoginScreen(
+                        onAdminLoginSuccess = { user ->
+                            sessionExpiredMessage = null
+                            navController.navigate("admin_dashboard") {
+                                popUpTo("admin_login") { inclusive = true }
+                            }
+                        },
+                        onBackToMainLogin = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                // 20. Admin Dashboard (Strict Role-Guarded Destination)
+                composable("admin_dashboard") {
+                    if (currentUser?.role != "admin") {
+                        LaunchedEffect(Unit) {
+                            if (currentUser?.role == "volunteer") {
+                                navController.navigate("volunteer_dashboard") {
+                                    popUpTo("admin_dashboard") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("home") {
+                                    popUpTo("admin_dashboard") { inclusive = true }
+                                }
+                            }
+                        }
+                    } else {
+                        AdminDashboardScreen(
+                            onLogout = {
+                                voiceManager.stopVoice()
+                                authApi.logout()
+                                ContextMemoryManager.reset()
+                                navController.navigate("auth") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
+                            onNavigateBack = {
+                                navController.navigate("home")
+                            }
+                        )
+                    }
+                }
             }
         }
     }
+}
 }

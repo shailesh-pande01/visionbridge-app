@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import com.example.visionbridge.data.EntertainmentRepository
 import com.example.visionbridge.data.StoryProgressData
 import com.example.visionbridge.ui.components.ActionCard
+import com.example.visionbridge.ui.components.AppTopBar
+import com.example.visionbridge.ui.components.SectionHeader
 import com.example.visionbridge.ui.theme.*
 import com.example.visionbridge.voice.ScreenActionRegistry
 
@@ -51,31 +51,11 @@ fun EntertainmentHomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "🎧 Entertainment Hub",
-                        fontWeight = FontWeight.Bold,
-                        color = Accent,
-                        fontSize = 22.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier.semantics { contentDescription = "Go back to main home" }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+            AppTopBar(
+                title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_title),
+                subtitle = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_subtitle),
+                onBack = onBack,
+                backContentDescription = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.common_back)
             )
         },
         containerColor = BgPrimary
@@ -86,10 +66,11 @@ fun EntertainmentHomeScreen(
                 .padding(paddingValues)
                 .background(BgPrimary)
                 .verticalScroll(scrollState)
-                .padding(20.dp),
+                .padding(horizontal = 18.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Voice hint
+            // Voice hint banner
+            val voiceBannerTalkback = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_voice_banner_talkback)
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = BgCard,
@@ -98,7 +79,7 @@ fun EntertainmentHomeScreen(
                     .fillMaxWidth()
                     .padding(bottom = 20.dp)
                     .semantics {
-                        contentDescription = "You can say: Vision, play local radio. Vision, open stories. Vision, start today's challenge."
+                        contentDescription = voiceBannerTalkback
                     }
             ) {
                 Row(
@@ -108,14 +89,14 @@ fun EntertainmentHomeScreen(
                     Text("🎙️", fontSize = 28.sp, modifier = Modifier.padding(end = 12.dp))
                     Column {
                         Text(
-                            text = "Voice-First Entertainment",
+                            text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_voice_banner_title),
                             color = Accent,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Say “Vision, play local radio” or “Vision, start daily challenge”.",
+                            text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_voice_banner_desc),
                             color = TextMuted,
                             fontSize = 13.sp
                         )
@@ -123,8 +104,12 @@ fun EntertainmentHomeScreen(
                 }
             }
 
-            // Continue listening banner if present
+            // Continue listening banner if progress is present
             if (savedStoryProgress != null && savedStoryProgress?.storyId?.isNotBlank() == true) {
+                val resumeTalkback = androidx.compose.ui.res.stringResource(
+                    com.example.visionbridge.R.string.entertainment_resume_talkback,
+                    savedStoryProgress?.storyTitle ?: ""
+                )
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = BgSecondary,
@@ -134,7 +119,7 @@ fun EntertainmentHomeScreen(
                         .padding(bottom = 20.dp)
                         .clickable { onNavigate("stories") }
                         .semantics {
-                            contentDescription = "Resume listening to ${savedStoryProgress?.storyTitle}. Tap to open."
+                            contentDescription = resumeTalkback
                         }
                 ) {
                     Row(
@@ -143,7 +128,12 @@ fun EntertainmentHomeScreen(
                     ) {
                         Text("🎧", fontSize = 32.sp, modifier = Modifier.padding(end = 14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("CONTINUE LISTENING", color = Accent, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text(
+                                androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_continue_listening),
+                                color = Accent,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
                             Text(
                                 text = savedStoryProgress?.storyTitle ?: "",
                                 color = TextPrimary,
@@ -151,56 +141,57 @@ fun EntertainmentHomeScreen(
                                 fontSize = 16.sp
                             )
                         }
-                        Text("▶ Resume", color = Accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_btn_resume),
+                            color = Accent,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
                     }
                 }
             }
 
-            Text(
-                text = "Entertainment Channels",
-                style = MaterialTheme.typography.titleMedium,
-                color = TextMuted,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 14.dp)
-                    .semantics { heading() }
+            SectionHeader(
+                title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_channels_header),
+                icon = "📻"
             )
 
-            // 1. Radio
-            ActionCard(
-                icon = "📻",
-                title = "Live Radio",
-                subtitle = "Tune in to live local & regional radio stations",
-                onClick = { onNavigate("radio") }
-            )
-            Spacer(modifier = Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // 1. Radio
+                ActionCard(
+                    icon = "📻",
+                    title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_radio_title),
+                    subtitle = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_radio_sub),
+                    badgeText = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.action_badge_live_stream),
+                    onClick = { onNavigate("radio") }
+                )
 
-            // 2. Stories
-            ActionCard(
-                icon = "📖",
-                title = "Stories & Audiobooks",
-                subtitle = "Public-domain classics in English, Hindi & Marathi",
-                onClick = { onNavigate("stories") }
-            )
-            Spacer(modifier = Modifier.height(14.dp))
+                // 2. Stories
+                ActionCard(
+                    icon = "📖",
+                    title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_stories_title),
+                    subtitle = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_stories_sub),
+                    badgeText = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.action_badge_audiobooks),
+                    onClick = { onNavigate("stories") }
+                )
 
-            // 3. Audio Games & Daily Challenge
-            ActionCard(
-                icon = "🎮",
-                title = "Games & Daily Challenge",
-                subtitle = "Trivia, Riddles, 20 Questions & Daily Streak",
-                onClick = { onNavigate("games") }
-            )
-            Spacer(modifier = Modifier.height(14.dp))
+                // 3. Audio Games & Daily Challenge
+                ActionCard(
+                    icon = "🎮",
+                    title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_games_title),
+                    subtitle = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_games_sub),
+                    badgeText = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.action_badge_xp_25),
+                    onClick = { onNavigate("games") }
+                )
 
-            // 4. My Progress
-            ActionCard(
-                icon = "⭐",
-                title = "My Progress & Streak",
-                subtitle = "Track your XP, daily streak & unlocked achievements",
-                onClick = { onNavigate("progress") }
-            )
+                // 4. My Progress
+                ActionCard(
+                    icon = "⭐",
+                    title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_progress_title),
+                    subtitle = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.entertainment_card_progress_sub),
+                    onClick = { onNavigate("progress") }
+                )
+            }
         }
     }
 }

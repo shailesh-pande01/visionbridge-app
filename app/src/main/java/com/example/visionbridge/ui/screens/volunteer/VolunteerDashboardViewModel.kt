@@ -44,6 +44,8 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
     private val _remoteMediaStream = MutableStateFlow<MediaStream?>(null)
     val remoteMediaStream: StateFlow<MediaStream?> = _remoteMediaStream.asStateFlow()
 
+    private var dashboardSignalingClient: WebRtcSignalingClient? = null
+
     fun loadRequests() {
         _dashboardState.value = VolunteerDashboardState.Loading
         viewModelScope.launch {
@@ -53,6 +55,7 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
             when (result) {
                 is ApiResult.Success -> {
                     _dashboardState.value = VolunteerDashboardState.RequestList(result.value)
+                    setupDashboardRealtime()
                 }
                 is ApiResult.Failure -> {
                     _dashboardState.value = VolunteerDashboardState.Error(result.error.userMessage)
@@ -61,9 +64,55 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
+    private fun setupDashboardRealtime() {
+        if (dashboardSignalingClient != null) return
+        dashboardSignalingClient = WebRtcSignalingClient().apply {
+            connect("dashboard", object : WebRtcSignalingClient.SignalingListener {
+                override fun onRequestUpdated(request: HelpRequest) {
+                    updateRequestInList(request)
+                }
+                override fun onRequestAccepted(request: HelpRequest) {
+                    updateRequestInList(request)
+                }
+                override fun onRequestCancelled() {
+                    loadRequests()
+                }
+                override fun onRequestCompleted() {
+                    loadRequests()
+                }
+                override fun onOfferReceived(sdp: String, type: String) {}
+                override fun onAnswerReceived(sdp: String, type: String) {}
+                override fun onIceCandidateReceived(sdpMid: String, sdpMLineIndex: Int, candidate: String) {}
+                override fun onCallEnded() {}
+            }, authToken = sessionManager.token)
+        }
+    }
+
+    private fun updateRequestInList(request: HelpRequest) {
+        val currentState = _dashboardState.value
+        if (currentState is VolunteerDashboardState.RequestList) {
+            val currentList = currentState.requests.toMutableList()
+            val index = currentList.indexOfFirst { it.id == request.id }
+            if (index != -1) {
+                if (request.status != "PENDING") {
+                    currentList.removeAt(index)
+                } else {
+                    currentList[index] = request
+                }
+            } else if (request.status == "PENDING") {
+                currentList.add(0, request)
+            }
+            _dashboardState.value = VolunteerDashboardState.RequestList(currentList)
+        }
+    }
+
     fun acceptRequest(request: HelpRequest) {
         val user = sessionManager.currentUser.value
-        val volunteerId = user?.id ?: "volunteer-1"
+        if (user == null || user.id.isBlank()) {
+            _dashboardState.value = VolunteerDashboardState.Error("You must be signed in as a volunteer.")
+            return
+        }
+        val volunteerId = user.id
 
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -88,6 +137,7 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
         val signaling = WebRtcSignalingClient()
         signalingClient = signaling
 
+        val token = sessionManager.token
         signaling.connect(request.id, object : WebRtcSignalingClient.SignalingListener {
             override fun onConnected() {
                 Log.d("VolunteerDashVM", "Signaling connected to room ${request.id}. Creating offer.")
@@ -164,6 +214,8 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
 
     private fun cleanup() {
         try {
+            dashboardSignalingClient?.disconnect()
+            dashboardSignalingClient = null
             callManager?.cleanup()
             callManager = null
             signalingClient?.disconnect()

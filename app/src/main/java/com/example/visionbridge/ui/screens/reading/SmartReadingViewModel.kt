@@ -68,11 +68,11 @@ class SmartReadingViewModel(
     }
 
     /** CameraX handed us JPEG bytes — optimize, upload, and publish the outcome. */
-    fun onImageCaptured(imageBytes: ByteArray, rotationDegrees: Int) {
+    fun onImageCaptured(imageBytes: ByteArray, rotationDegrees: Int, language: String = "en") {
         _uiState.value = ReadingUiState.Processing
 
         viewModelScope.launch {
-            _uiState.value = when (val result = repository.extractText(imageBytes, rotationDegrees)) {
+            _uiState.value = when (val result = repository.extractText(imageBytes, rotationDegrees, language)) {
                 is ApiResult.Success -> {
                     val extraction = result.value
                     val text = extraction.extractedText

@@ -102,6 +102,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
         _liveState.value = LiveState.STARTING
         Log.d(TAG, "Starting Live session in mode: ${mode.name}")
+        com.example.visionbridge.voice.VoiceManager.getInstance(context).pauseForCall()
 
         viewModelScope.launch {
             // 1. Initialize Audio Engine immediately
@@ -126,20 +127,7 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
                     _liveState.value = LiveState.LISTENING
                 },
                 onSpeechEnd = {
-                    Log.d(TAG, "User speech ended.")
-                    // In vision mode, if local VAD detects end of speech, finalize turn with camera frame
-                    if (liveMode == LiveMode.VISION && geminiWebSocket?.isSetupComplete?.get() == true) {
-                        val isHigh = _visualQualityMode.value == VisualQualityMode.HIGH_DETAIL
-                        cameraStreamer?.captureCurrentFrame(highDetail = isHigh) { frame ->
-                            turnStartTime = System.currentTimeMillis()
-                            waitingFirstAudio = true
-                            _liveState.value = LiveState.THINKING
-                            geminiWebSocket?.sendUserTurn(
-                                text = "Answer what you see and hear.",
-                                base64Jpeg = frame
-                            )
-                        }
-                    }
+                    Log.d(TAG, "User speech ended. Relying on Gemini's automaticActivityDetection for turn completion.")
                 },
                 onLevel = { rms ->
                     _diagnostics.value = _diagnostics.value.copy(
@@ -416,6 +404,8 @@ class LiveViewModel(application: Application) : AndroidViewModel(application) {
 
         cameraStreamer?.stop()
         cameraStreamer = null
+
+        com.example.visionbridge.voice.VoiceManager.getInstance(context).resumeAfterCall()
 
         _isAiSpeaking.value = false
         waitingFirstAudio = false

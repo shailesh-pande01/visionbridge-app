@@ -139,11 +139,19 @@ class VoiceManager private constructor(private val context: Context) {
     }
 
     /**
-     * Manual activation (e.g. from tapping the microphone button or double-tap).
+     * Manual or gesture activation (e.g. from tapping the microphone button, double-tap, or shake).
      * Bypasses wake-word requirement and immediately enters command listening.
      */
-    fun activateVoice(initialCommand: String = "") {
-        if (isBusy || isPausedForCall) return
+    fun activateVoice(
+        source: VoiceActivationSource = VoiceActivationSource.BUTTON,
+        initialCommand: String = ""
+    ) {
+        if (isBusy || isPausedForCall) {
+            Log.d(TAG, "activateVoice rejected: isBusy=$isBusy, isPausedForCall=$isPausedForCall (source: $source)")
+            return
+        }
+
+        Log.d("VB_VOICE_ACTIVATION", "Voice listening activated via source: $source")
 
         tts.stop()
         wantListening = true
@@ -165,14 +173,25 @@ class VoiceManager private constructor(private val context: Context) {
         // Duck background media audio during user voice interaction
         com.example.visionbridge.audio.EntertainmentAudioSession.setDucked(true)
 
+        val langCode = SessionManager.getInstance(context).getLanguage()
+        val listeningPrompt = when (langCode.lowercase()) {
+            "hi" -> "सुन रहा हूँ।"
+            "mr" -> "ऐकत आहे."
+            else -> "Listening."
+        }
+
         // Announce ready prompt
-        tts.speak("Listening.") {
+        tts.speak(listeningPrompt) {
             if (!isBusy && currentPhase == Phase.COMMAND) {
                 scheduleRestart(0)
                 armCommandTimeout()
             }
         }
     }
+
+    fun isBusy(): Boolean = isBusy
+    fun isPausedForCall(): Boolean = isPausedForCall
+    fun getCurrentPhase(): Phase = currentPhase
 
     /**
      * Pauses global voice engine completely during an active WebRTC volunteer call.
@@ -398,7 +417,13 @@ class VoiceManager private constructor(private val context: Context) {
                         transcript = "",
                         error = ""
                     )
-                    tts.speak("Listening.") {
+                    val langCode = SessionManager.getInstance(context).getLanguage()
+                    val listeningPrompt = when (langCode.lowercase()) {
+                        "hi" -> "सुन रहा हूँ।"
+                        "mr" -> "ऐकत आहे."
+                        else -> "Listening."
+                    }
+                    tts.speak(listeningPrompt) {
                         if (!isBusy && currentPhase == Phase.COMMAND) {
                             scheduleRestart(0)
                             armCommandTimeout()
@@ -521,11 +546,15 @@ class VoiceManager private constructor(private val context: Context) {
         )
 
         scope.launch {
-            // 1. Try local fast-path rules
-            var action = VoiceActionRouter.matchFastPath(command)
+            Log.d("VB_VOICE_INTENT", "Dispatching command: '$command'")
 
-            // 2. If no fast path matched, query backend Gemini Assistant
-            if (action == null) {
+            // 1. Try local fast-path rules (deterministic, instant, offline-capable)
+            var action = VoiceActionRouter.matchFastPath(command)
+            if (action != null) {
+                Log.d("VB_VOICE_ROUTER", "Matched local fast path: action=${action.action}, target=${action.target}")
+            } else {
+                // 2. Intelligent fallback to Gemini Assistant
+                Log.d("VB_VOICE_GEMINI", "No local match found. Querying Gemini Assistant for: '$command'")
                 val langCode = SessionManager.getInstance(context).getLanguage()
                 val apiRes = withContext(Dispatchers.IO) {
                     assistantApi.sendCommand(command, langCode)
@@ -533,10 +562,10 @@ class VoiceManager private constructor(private val context: Context) {
                 action = when (apiRes) {
                     is com.example.visionbridge.api.ApiResult.Success -> apiRes.value
                     is com.example.visionbridge.api.ApiResult.Failure -> {
-                        Log.e(TAG, "Assistant API request failed: ${apiRes.error.userMessage}")
+                        Log.e("VB_VOICE_GEMINI", "Gemini intent routing failed: ${apiRes.error.userMessage}")
                         AssistantAction(
                             action = VoiceActions.UNKNOWN,
-                            speech = "I couldn't reach the server. Please try again."
+                            speech = "I couldn't understand that command right now. Please try again."
                         )
                     }
                 }
@@ -547,7 +576,7 @@ class VoiceManager private constructor(private val context: Context) {
     }
 
     private fun executeAction(command: String, action: AssistantAction) {
-        Log.d(TAG, "Executing Action: ${action.action}, target: ${action.target}, speech: '${action.speech}'")
+        Log.d("VB_VOICE", "Executing Action: action=${action.action}, target=${action.target}, speech='${action.speech}'")
         val activeScreen = ScreenActionRegistry.getActiveScreen()
         val speechText = action.speech ?: ""
 
@@ -561,7 +590,7 @@ class VoiceManager private constructor(private val context: Context) {
 
         when (action.action) {
             VoiceActions.OPEN_FEATURE -> {
-                val route = VoiceActionRouter.routeForTarget(action.target)
+                val route = VoiceActionRouter.routeForTarget(action.target, action.objectName)
                 _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
                 navigationHandler?.invoke(route)
                 speakThenResume(speechText.ifBlank { "Opening ${action.target}" })
@@ -596,6 +625,43 @@ class VoiceManager private constructor(private val context: Context) {
                     navigationHandler?.invoke(route)
                     speakThenResume(speechText.ifBlank { "Looking for your $objectName." })
                 }
+            }
+
+            VoiceActions.CALL_CONTACT, VoiceActions.CALL_NUMBER -> {
+                val route = VoiceActionRouter.routeForTarget(VoiceFeatures.CALLING)
+                _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                navigationHandler?.invoke(route)
+                speakThenResume(speechText.ifBlank { "Opening Calling Assistant." })
+            }
+
+            VoiceActions.ADD_CONTACT, VoiceActions.RECENT_CALLS -> {
+                val route = VoiceActionRouter.routeForTarget(VoiceFeatures.CALLING)
+                _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                navigationHandler?.invoke(route)
+                speakThenResume(speechText.ifBlank { "Opening Calling Assistant." })
+            }
+
+            VoiceActions.END_CALL -> {
+                ScreenActionRegistry.executeCancel()
+                speakThenResume(speechText.ifBlank { "Call ended." })
+            }
+
+            VoiceActions.NEWS_BRIEFING, VoiceActions.NEWS_CATEGORY -> {
+                if (activeScreen == "news") {
+                    speakThenResume(speechText.ifBlank { "Getting news." })
+                } else {
+                    val route = VoiceActionRouter.routeForTarget(VoiceFeatures.NEWS)
+                    _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                    navigationHandler?.invoke(route)
+                    speakThenResume(speechText.ifBlank { "Opening Daily News Briefing." })
+                }
+            }
+
+            VoiceActions.NEWS_NEXT, VoiceActions.NEWS_PREV, VoiceActions.NEWS_REPEAT,
+            VoiceActions.NEWS_SOURCE, VoiceActions.NEWS_OPEN_ORIGINAL,
+            VoiceActions.NEWS_REFRESH, VoiceActions.NEWS_MORE,
+            VoiceActions.NEWS_SPEED, VoiceActions.NEWS_LANG -> {
+                speakThenResume(speechText.ifBlank { "Updated news." })
             }
 
             VoiceActions.CAPTURE_IMAGE -> {
@@ -635,7 +701,8 @@ class VoiceManager private constructor(private val context: Context) {
             }
 
             VoiceActions.ASK_CONTEXTUAL_QUESTION -> {
-                speakThenResume(speechText.ifBlank { "I don't have that information right now." })
+                Log.d("VB_VOICE_FOLLOWUP", "Answering contextual question with speech: '$speechText'")
+                speakThenResume(speechText.ifBlank { "I don't have that information from what I just captured." })
             }
 
             VoiceActions.RADIO_PAUSE -> {
@@ -650,10 +717,19 @@ class VoiceManager private constructor(private val context: Context) {
                 speakThenResume(speechText.ifBlank { "Resumed." })
             }
 
-            VoiceActions.RADIO_STOP -> {
+            VoiceActions.RADIO_STOP, VoiceActions.STOP_ENTERTAINMENT -> {
                 com.example.visionbridge.audio.EntertainmentMediaService.instance?.stopPlayback()
                 com.example.visionbridge.audio.StoryChunkedTtsPlayer.getInstance(context).stop()
                 speakThenResume(speechText.ifBlank { "Stopped." })
+            }
+
+            VoiceActions.LIVE_RADIO_PLAY, VoiceActions.LIVE_RADIO_SEARCH -> {
+                if (activeScreen != "radio") {
+                    val route = VoiceActionRouter.routeForTarget(VoiceFeatures.RADIO)
+                    _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                    navigationHandler?.invoke(route)
+                }
+                speakThenResume(speechText.ifBlank { "Starting live radio." })
             }
 
             VoiceActions.LIVE_RADIO_INFO -> {
@@ -699,6 +775,17 @@ class VoiceManager private constructor(private val context: Context) {
                 }
             }
 
+            VoiceActions.STORY_PLAY, VoiceActions.STORY_PLAY_GENRE, VoiceActions.STORY_PLAY_LANGUAGE,
+            VoiceActions.STORY_FILTER_GENRE, VoiceActions.STORY_FILTER_LANGUAGE,
+            VoiceActions.STORY_CONTINUE, VoiceActions.STORY_RESTART, VoiceActions.STORY_INFO -> {
+                if (activeScreen != "stories") {
+                    val route = VoiceActionRouter.routeForTarget(VoiceFeatures.STORIES)
+                    _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                    navigationHandler?.invoke(route)
+                }
+                speakThenResume(speechText.ifBlank { "Opening stories." })
+            }
+
             VoiceActions.STORY_NEXT_CHAPTER -> {
                 val ok = com.example.visionbridge.audio.StoryChunkedTtsPlayer.getInstance(context).nextChapter()
                 if (ok) {
@@ -715,6 +802,24 @@ class VoiceManager private constructor(private val context: Context) {
                 } else {
                     speakThenResume("Already at the first chapter.")
                 }
+            }
+
+            VoiceActions.START_GAME -> {
+                if (activeScreen != "games") {
+                    val route = VoiceActionRouter.routeForTarget(VoiceFeatures.GAMES)
+                    _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                    navigationHandler?.invoke(route)
+                }
+                speakThenResume(speechText.ifBlank { "Opening audio games." })
+            }
+
+            VoiceActions.GET_PROGRESS -> {
+                if (activeScreen != "progress") {
+                    val route = VoiceActionRouter.routeForTarget(VoiceFeatures.PROGRESS)
+                    _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
+                    navigationHandler?.invoke(route)
+                }
+                speakThenResume(speechText.ifBlank { "Opening your progress." })
             }
 
             else -> {

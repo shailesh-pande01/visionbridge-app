@@ -26,23 +26,39 @@ import com.example.visionbridge.ui.theme.BgSecondary
 import com.example.visionbridge.voice.VoiceState
 import com.example.visionbridge.voice.VoiceStatus
 
+import androidx.compose.ui.res.stringResource
+import com.example.visionbridge.R
+
 @Composable
 fun VoiceAssistantArea(
     voiceState: VoiceState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val (stateText, iconText) = when (voiceState.status) {
-        VoiceStatus.IDLE -> Pair("Tap or say \"Vision\"", "🎙️")
-        VoiceStatus.LISTENING -> Pair("Listening for \"Vision\"…", "🎙️")
-        VoiceStatus.AWAITING_COMMAND -> Pair("Listening for command…", "✨")
-        VoiceStatus.PROCESSING -> Pair("Understanding command…", "⏳")
-        VoiceStatus.NAVIGATING -> Pair("Opening feature…", "➡️")
-        VoiceStatus.SPEAKING -> Pair(voiceState.message.ifBlank { "Speaking…" }, "🔊")
-        VoiceStatus.PAUSED -> Pair("Voice assistant paused", "⏸️")
-        VoiceStatus.BLOCKED -> Pair(voiceState.error.ifBlank { "Microphone permission required" }, "🚫")
-        VoiceStatus.UNSUPPORTED -> Pair(voiceState.error.ifBlank { "Voice not supported" }, "⚠️")
-        VoiceStatus.ERROR -> Pair(voiceState.error.ifBlank { "Couldn't understand" }, "⚠️")
+    val stateText = when (voiceState.status) {
+        VoiceStatus.IDLE -> stringResource(R.string.voice_status_tap_or_say_vision)
+        VoiceStatus.LISTENING -> stringResource(R.string.voice_status_listening_for_vision)
+        VoiceStatus.AWAITING_COMMAND -> stringResource(R.string.voice_status_listening_for_command)
+        VoiceStatus.PROCESSING -> stringResource(R.string.voice_status_processing_command)
+        VoiceStatus.NAVIGATING -> stringResource(R.string.voice_status_opening_feature)
+        VoiceStatus.SPEAKING -> voiceState.message.ifBlank { stringResource(R.string.voice_status_speaking) }
+        VoiceStatus.PAUSED -> stringResource(R.string.voice_status_paused)
+        VoiceStatus.BLOCKED -> voiceState.error.ifBlank { stringResource(R.string.voice_status_blocked) }
+        VoiceStatus.UNSUPPORTED -> voiceState.error.ifBlank { stringResource(R.string.voice_status_unsupported) }
+        VoiceStatus.ERROR -> voiceState.error.ifBlank { stringResource(R.string.voice_status_error) }
+    }
+
+    val iconText = when (voiceState.status) {
+        VoiceStatus.IDLE -> "🎙️"
+        VoiceStatus.LISTENING -> "🎙️"
+        VoiceStatus.AWAITING_COMMAND -> "✨"
+        VoiceStatus.PROCESSING -> "⏳"
+        VoiceStatus.NAVIGATING -> "➡️"
+        VoiceStatus.SPEAKING -> "🔊"
+        VoiceStatus.PAUSED -> "⏸️"
+        VoiceStatus.BLOCKED -> "🚫"
+        VoiceStatus.UNSUPPORTED -> "⚠️"
+        VoiceStatus.ERROR -> "⚠️"
     }
 
     val isListening = voiceState.status == VoiceStatus.LISTENING ||
@@ -104,6 +120,7 @@ fun VoiceAssistantArea(
                     )
                 }
 
+                val areaDescription = stringResource(R.string.voice_status_description, stateText)
                 Box(
                     modifier = Modifier
                         .size(120.dp)
@@ -111,7 +128,7 @@ fun VoiceAssistantArea(
                         .background(if (voiceState.status == VoiceStatus.IDLE) Accent.copy(alpha = 0.8f) else Accent)
                         .clickable { onClick() }
                         .semantics {
-                            contentDescription = "Voice Assistant Area. Current state: $stateText. Tap to interact."
+                            contentDescription = areaDescription
                         },
                     contentAlignment = Alignment.Center
                 ) {

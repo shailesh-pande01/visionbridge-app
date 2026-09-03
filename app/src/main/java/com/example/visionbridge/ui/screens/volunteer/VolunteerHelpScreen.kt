@@ -118,16 +118,16 @@ fun VolunteerHelpScreen(
                 tts.speak(context.getString(R.string.volunteer_locating))
             }
             is VolunteerCallState.SearchingVolunteer -> {
-                tts.speak("Help request sent. Searching for an available volunteer.")
+                tts.speak(context.getString(R.string.volunteer_help_searching_speech))
             }
             is VolunteerCallState.Accepted -> {
                 VoiceManager.getInstance(context).pauseForCall()
                 val vol = if (!state.volunteerName.isNullOrBlank()) state.volunteerName else "A volunteer"
-                tts.speak("$vol has accepted your request. Connecting call...")
+                tts.speak(context.getString(R.string.volunteer_help_accepted_speech, vol))
             }
             is VolunteerCallState.Connecting -> {
                 VoiceManager.getInstance(context).pauseForCall()
-                tts.speak("Connecting to volunteer...")
+                tts.speak(context.getString(R.string.volunteer_help_connecting_speech))
             }
             is VolunteerCallState.Connected -> {
                 VoiceManager.getInstance(context).pauseForCall()
@@ -147,23 +147,15 @@ fun VolunteerHelpScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_volunteer), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            viewModel.cancelRequest()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_volunteer),
+                subtitle = stringResource(R.string.volunteer_help_subtitle),
+                onBack = {
+                    tts.stop()
+                    viewModel.cancelRequest()
+                    onBack()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                backContentDescription = stringResource(R.string.common_cancel)
             )
         },
         containerColor = BgPrimary
@@ -271,7 +263,7 @@ fun VolunteerHelpScreen(
                         Spacer(modifier = Modifier.height(28.dp))
 
                         Text(
-                            text = "$volName Accepted!",
+                            text = stringResource(R.string.volunteer_accepted_title, volName),
                             color = Accent,
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
@@ -282,7 +274,7 @@ fun VolunteerHelpScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Establishing live video call connection...",
+                            text = stringResource(R.string.volunteer_connecting_desc),
                             color = TextPrimary,
                             fontSize = 18.sp,
                             textAlign = TextAlign.Center,
@@ -327,13 +319,13 @@ fun VolunteerHelpScreen(
                                 Text(text = "🟢", fontSize = 24.sp, modifier = Modifier.padding(end = 12.dp))
                                 Column {
                                     Text(
-                                        text = "LIVE ASSISTANCE CALL",
+                                        text = stringResource(R.string.volunteer_call_badge),
                                         color = BgPrimary,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Connected with Volunteer",
+                                        text = stringResource(R.string.volunteer_connected_title),
                                         color = BgPrimary,
                                         fontSize = 22.sp,
                                         fontWeight = FontWeight.Bold
@@ -345,7 +337,7 @@ fun VolunteerHelpScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Text(
-                            text = "The volunteer can see your back camera feed and hear your microphone. Talk normally to describe what you need.",
+                            text = stringResource(R.string.volunteer_connected_instruction),
                             color = TextPrimary,
                             fontSize = 18.sp,
                             lineHeight = 26.sp,
@@ -368,7 +360,7 @@ fun VolunteerHelpScreen(
                                 )
                             ) {
                                 Text(
-                                    text = if (state.isMuted) "🔇 Unmute" else "🎙️ Mute",
+                                    text = if (state.isMuted) stringResource(R.string.volunteer_btn_unmute) else stringResource(R.string.volunteer_btn_mute),
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
                                 )

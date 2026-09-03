@@ -219,6 +219,10 @@ class TextToSpeechManager(
         return chunks
     }
 
+    fun setSpeechRate(rate: Float) {
+        tts?.setSpeechRate(rate.coerceIn(0.5f, 2.0f))
+    }
+
     fun setLanguage(langCode: String) {
         val locale = LocaleHelper.getLocale(langCode)
         updateLanguage(locale)

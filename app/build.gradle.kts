@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -20,32 +23,49 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ── VisionBridge backend location ──────────────────────────────
-        // The Android app talks to the existing MERN server (server/server.js),
-        // which listens on PORT from server/.env (5000 by default).
-        //
-        // How the app finds it at runtime (see api/BackendLocator.kt):
-        //   · Emulator            → http://10.0.2.2:<port>
-        //   · USB + adb reverse   → http://127.0.0.1:<port>
-        //   · Same Wi-Fi as the   → http://<visionbridge.lanHost>:<port>
-        //     development machine
-        //
-        // Override the LAN host without touching code:
-        //   gradle.properties →  visionbridge.lanHost=192.168.1.42
+        // ── VisionBridge backend location & Supabase configuration ──
+        // Prioritizes local.properties (gitignored) over gradle.properties (committed)
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            FileInputStream(localPropertiesFile).use { localProperties.load(it) }
+        }
+        fun resolveProp(key: String, fallback: String): String {
+            val localVal = localProperties.getProperty(key)?.trim()
+            if (!localVal.isNullOrBlank() && !localVal.startsWith("your_") && !localVal.contains("your-supabase")) {
+                return localVal
+            }
+            val projVal = (project.findProperty(key) as? String)?.trim()
+            if (!projVal.isNullOrBlank() && !projVal.startsWith("your_") && !projVal.contains("your-supabase")) {
+                return projVal
+            }
+            return fallback
+        }
+
         buildConfigField(
             "String",
             "VISIONBRIDGE_LAN_HOST",
-            "\"${project.findProperty("visionbridge.lanHost") ?: "10.245.222.201"}\""
+            "\"${resolveProp("visionbridge.lanHost", "10.0.2.2")}\""
         )
         buildConfigField(
             "int",
             "VISIONBRIDGE_API_PORT",
-            "${project.findProperty("visionbridge.apiPort") ?: 5000}"
+            resolveProp("visionbridge.apiPort", "5000")
         )
         buildConfigField(
             "String",
             "VISIONBRIDGE_PROD_URL",
-            "\"${project.findProperty("visionbridge.prodUrl") ?: ""}\""
+            "\"${resolveProp("visionbridge.prodUrl", "")}\""
+        )
+        buildConfigField(
+            "String",
+            "VISIONBRIDGE_SUPABASE_URL",
+            "\"${resolveProp("visionbridge.supabaseUrl", "https://your-supabase-project.supabase.co")}\""
+        )
+        buildConfigField(
+            "String",
+            "VISIONBRIDGE_SUPABASE_ANON_KEY",
+            "\"${resolveProp("visionbridge.supabaseAnonKey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_key")}\""
         )
     }
 
@@ -66,6 +86,11 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -82,6 +107,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.navigation:navigation-compose:2.7.7")
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

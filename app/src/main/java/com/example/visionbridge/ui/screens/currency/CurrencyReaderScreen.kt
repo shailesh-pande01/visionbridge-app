@@ -195,7 +195,7 @@ fun CurrencyReaderScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is CurrencyUiState.Processing -> {
-                tts.speak("Analyzing currency. Please wait.")
+                tts.speak(context.getString(R.string.currency_processing_speech))
             }
             is CurrencyUiState.Result -> {
                 ContextMemoryManager.setContext("currency", "currency detected", state.analysis.speech)
@@ -210,22 +210,14 @@ fun CurrencyReaderScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_currency), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_currency),
+                subtitle = stringResource(R.string.currency_subtitle),
+                onBack = {
+                    tts.stop()
+                    onBack()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                backContentDescription = stringResource(R.string.common_back)
             )
         },
         containerColor = BgPrimary
@@ -260,10 +252,11 @@ fun CurrencyReaderScreen(
                                     CircularProgressIndicator(color = Accent)
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = "Counting currency…",
+                                        text = stringResource(R.string.currency_processing_speech),
                                         color = TextPrimary,
                                         fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }

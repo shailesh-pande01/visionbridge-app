@@ -72,12 +72,14 @@ fun RadioScreen(
         }
     }
 
+    val backDesc = stringResource(R.string.common_back)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "📻 Live Radio",
+                        text = stringResource(R.string.radio_title),
                         fontWeight = FontWeight.Bold,
                         color = Accent,
                         fontSize = 22.sp
@@ -86,7 +88,7 @@ fun RadioScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
-                        modifier = Modifier.semantics { contentDescription = "Go back to Entertainment Hub" }
+                        modifier = Modifier.semantics { contentDescription = backDesc }
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -217,7 +219,7 @@ private fun LiveRadioContent(
                 }
 
                 Text(
-                    text = "NOW PLAYING",
+                    text = stringResource(R.string.radio_now_playing),
                     color = TextMuted,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -360,7 +362,7 @@ private fun LiveRadioContent(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Stop Radio", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.radio_btn_stop), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -369,7 +371,7 @@ private fun LiveRadioContent(
 
         // Station Filters Header
         Text(
-            text = "Station Filters",
+            text = stringResource(R.string.radio_filters_header),
             style = MaterialTheme.typography.titleMedium,
             color = TextMuted,
             fontWeight = FontWeight.Bold,
@@ -429,7 +431,7 @@ private fun LiveRadioContent(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Browse Stations (${uiState.stations.size})",
+                text = stringResource(R.string.radio_btn_browse, uiState.stations.size),
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp
             )
@@ -453,7 +455,7 @@ private fun LiveRadioContent(
                     }
                 } else if (uiState.stations.isEmpty()) {
                     Text(
-                        text = "No stations found for this filter.",
+                        text = stringResource(R.string.radio_no_stations),
                         color = TextMuted,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -505,7 +507,7 @@ private fun LiveRadioContent(
                                     }
                                 }
                                 if (isSelected) {
-                                    Text("PLAYING", color = Accent, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Text(stringResource(R.string.radio_status_playing), color = Accent, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                 }
                             }
                         }

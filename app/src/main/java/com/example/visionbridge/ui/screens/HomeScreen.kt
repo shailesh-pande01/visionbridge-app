@@ -4,20 +4,28 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -25,6 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.visionbridge.R
 import com.example.visionbridge.data.SessionManager
 import com.example.visionbridge.ui.components.ActionCard
+import com.example.visionbridge.ui.components.ConfirmLogoutDialog
+import com.example.visionbridge.ui.components.LanguageSelector
+import com.example.visionbridge.ui.components.SectionHeader
 import com.example.visionbridge.ui.components.VoiceAssistantArea
 import com.example.visionbridge.ui.theme.*
 import com.example.visionbridge.voice.VoiceManager
@@ -45,6 +56,8 @@ fun HomeScreen(
     val voiceState by voiceManager.voiceState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -53,7 +66,7 @@ fun HomeScreen(
         }
     }
 
-    // Ensure ambient wake-word listening is active if permission is granted
+    // Ensure ambient wake-word listening is active if mic permission is granted
     LaunchedEffect(Unit) {
         val hasMic = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
@@ -68,95 +81,78 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            fontWeight = FontWeight.Bold,
-                            color = Accent,
-                            fontSize = 24.sp
-                        )
-                        if (currentUser != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        // App Logo Icon
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(AccentDim),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.app_logo),
+                                contentDescription = null,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Column {
                             Text(
-                                text = currentUser?.name ?: "",
-                                color = TextMuted,
-                                fontSize = 13.sp
+                                text = stringResource(R.string.app_name),
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                fontSize = 20.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            val fallbackHubName = stringResource(R.string.common_accessibility_hub)
+                            val userDisplayName = currentUser?.name?.takeIf { it.isNotBlank() } ?: fallbackHubName
+                            Text(
+                                text = userDisplayName,
+                                color = Accent,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 },
                 actions = {
-                    // Language Switcher (EN / HI / MR)
                     Row(
-                        modifier = Modifier.padding(end = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (currentLanguage == "en") Accent else BgCard,
-                            modifier = Modifier.padding(2.dp)
-                        ) {
-                            TextButton(
-                                onClick = { sessionManager.setLanguage("en") },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier.height(34.dp)
-                            ) {
-                                Text(
-                                    "EN",
-                                    color = if (currentLanguage == "en") BgPrimary else TextPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
+                        // Compact Accessible Language Selector
+                        LanguageSelector(
+                            currentLanguageCode = currentLanguage,
+                            onLanguageSelected = { langCode ->
+                                sessionManager.setLanguage(langCode)
                             }
-                        }
+                        )
 
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (currentLanguage == "hi") Accent else BgCard,
-                            modifier = Modifier.padding(2.dp)
+                        // Logout Button (opens confirmation dialog)
+                        val logoutTalkback = stringResource(R.string.dialog_sign_out_talkback)
+                        IconButton(
+                            onClick = { showLogoutDialog = true },
+                            modifier = Modifier
+                                .size(44.dp)
+                                .semantics { contentDescription = logoutTalkback }
                         ) {
-                            TextButton(
-                                onClick = { sessionManager.setLanguage("hi") },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier.height(34.dp)
-                            ) {
-                                Text(
-                                    "हि",
-                                    color = if (currentLanguage == "hi") BgPrimary else TextPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = null,
+                                tint = Emergency.copy(alpha = 0.9f),
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
-
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (currentLanguage == "mr") Accent else BgCard,
-                            modifier = Modifier.padding(2.dp)
-                        ) {
-                            TextButton(
-                                onClick = { sessionManager.setLanguage("mr") },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier.height(34.dp)
-                            ) {
-                                Text(
-                                    "म",
-                                    color = if (currentLanguage == "mr") BgPrimary else TextPrimary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            }
-                        }
-                    }
-
-                    // Logout Button
-                    TextButton(
-                        onClick = {
-                            voiceManager.stopVoice()
-                            sessionManager.clearUser()
-                            onLogout()
-                        }
-                    ) {
-                        Text(stringResource(R.string.auth_logout), color = Emergency, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -173,10 +169,10 @@ fun HomeScreen(
                 .padding(paddingValues)
                 .background(BgPrimary)
                 .verticalScroll(scrollState)
-                .padding(20.dp),
+                .padding(horizontal = 18.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Primary: Voice Assistant Area
+            // 1. Primary Hero: Voice Assistant Interactive Area
             VoiceAssistantArea(
                 voiceState = voiceState,
                 onClick = {
@@ -195,145 +191,221 @@ fun HomeScreen(
                 }
             )
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Gesture Discovery Hint Card
+            val gestureHintTalkback = stringResource(R.string.gesture_home_hint_talkback)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = BgCard,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Border)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                        .semantics(mergeDescendants = true) {
+                            contentDescription = gestureHintTalkback
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "👆✌️",
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(end = 10.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.gesture_home_hint),
+                        color = TextMuted,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 18.sp
+                    )
+                }
+            }
+
+            // Administrator Console Entry Card (Only for verified admin users)
+            if (currentUser?.role == "admin") {
+                Spacer(modifier = Modifier.height(14.dp))
+                ActionCard(
+                    icon = "🛡️",
+                    title = stringResource(R.string.admin_home_banner_title),
+                    subtitle = stringResource(R.string.admin_home_banner_sub),
+                    badgeText = stringResource(R.string.admin_dashboard_badge),
+                    onClick = { onNavigate("admin_dashboard") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 2. Section: AI Assistance
+            SectionHeader(
+                title = stringResource(R.string.home_section_ai_assistance),
+                icon = "✨",
+                accentBadgeColor = AccentDim
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // VisionBridge Live (Real-time camera + voice WebSocket)
+                ActionCard(
+                    icon = "⚡",
+                    title = stringResource(R.string.feature_live_vision),
+                    subtitle = stringResource(R.string.feature_live_vision_sub),
+                    badgeText = stringResource(R.string.action_badge_realtime),
+                    onClick = { onNavigate("live_vision") }
+                )
+
+                // AI Voice Call (Conversational voice assistant)
+                ActionCard(
+                    icon = "🎙️",
+                    title = stringResource(R.string.feature_voice_call),
+                    subtitle = stringResource(R.string.feature_voice_call_sub),
+                    badgeText = stringResource(R.string.action_badge_audio_call),
+                    onClick = { onNavigate("voice_call") }
+                )
+
+                // Smart Reading (OCR + TTS)
+                ActionCard(
+                    icon = "📖",
+                    title = stringResource(R.string.feature_reading),
+                    subtitle = stringResource(R.string.feature_reading_sub),
+                    onClick = { onNavigate("reading") }
+                )
+
+                // Surroundings (Scene description)
+                ActionCard(
+                    icon = "📷",
+                    title = stringResource(R.string.feature_surroundings),
+                    subtitle = stringResource(R.string.feature_surroundings_sub),
+                    onClick = { onNavigate("surroundings") }
+                )
+
+                // Smart Object Finder
+                ActionCard(
+                    icon = "🔍",
+                    title = stringResource(R.string.feature_finder),
+                    subtitle = stringResource(R.string.feature_finder_sub),
+                    onClick = { onNavigate("finder") }
+                )
+
+                // Currency Reader
+                ActionCard(
+                    icon = "💵",
+                    title = stringResource(R.string.feature_currency),
+                    subtitle = stringResource(R.string.feature_currency_sub),
+                    onClick = { onNavigate("currency") }
+                )
+
+                // Public Transport Assistant
+                ActionCard(
+                    icon = "🚍",
+                    title = stringResource(R.string.feature_transport),
+                    subtitle = stringResource(R.string.feature_transport_sub),
+                    onClick = { onNavigate("transport") }
+                )
+            }
+
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Section: Quick Actions
-            Text(
-                text = stringResource(R.string.home_quick_actions),
-                style = MaterialTheme.typography.titleMedium,
-                color = TextMuted,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 14.dp)
-                    .semantics { heading() }
+            // 3. Section: Human Assistance & Safety
+            SectionHeader(
+                title = stringResource(R.string.home_section_human_assistance),
+                icon = "🛡️",
+                accentBadgeColor = EmergencyDim
             )
 
-            // 0a. VisionBridge Live (Real-time camera + voice)
-            ActionCard(
-                icon = "⚡",
-                title = stringResource(R.string.feature_live_vision),
-                subtitle = stringResource(R.string.feature_live_vision_sub),
-                onClick = { onNavigate("live_vision") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Volunteer Help (Live Sighted Volunteer)
+                ActionCard(
+                    icon = "🤝",
+                    title = stringResource(R.string.feature_volunteer),
+                    subtitle = stringResource(R.string.feature_volunteer_sub),
+                    badgeText = stringResource(R.string.action_badge_live_volunteer),
+                    onClick = { onNavigate("volunteer") }
+                )
 
-            // 0b. AI Voice Call (Real-time conversational voice assistant)
-            ActionCard(
-                icon = "🎙️",
-                title = stringResource(R.string.feature_voice_call),
-                subtitle = stringResource(R.string.feature_voice_call_sub),
-                onClick = { onNavigate("voice_call") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+                // Emergency SOS (Instant alert + WhatsApp GPS dispatch)
+                ActionCard(
+                    icon = "🚨",
+                    title = stringResource(R.string.feature_sos),
+                    subtitle = stringResource(R.string.feature_sos_sub),
+                    isEmergency = true,
+                    onClick = { onNavigate("sos") }
+                )
+            }
 
-            // 1. Smart Reading
-            ActionCard(
-                icon = "📖",
-                title = stringResource(R.string.feature_reading),
-                subtitle = stringResource(R.string.feature_reading_sub),
-                onClick = { onNavigate("reading") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // 2. Surroundings
-            ActionCard(
-                icon = "🎙️",
-                title = stringResource(R.string.feature_surroundings),
-                subtitle = stringResource(R.string.feature_surroundings_sub),
-                onClick = { onNavigate("surroundings") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 3. Hazard Mode
-            ActionCard(
-                icon = "🚨",
-                title = stringResource(R.string.feature_hazard),
-                subtitle = stringResource(R.string.feature_hazard_sub),
-                onClick = { onNavigate("hazard") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 4. Currency Reader
-            ActionCard(
-                icon = "💵",
-                title = stringResource(R.string.feature_currency),
-                subtitle = stringResource(R.string.feature_currency_sub),
-                onClick = { onNavigate("currency") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 5. Public Transport
-            ActionCard(
-                icon = "🚍",
-                title = stringResource(R.string.feature_transport),
-                subtitle = stringResource(R.string.feature_transport_sub),
-                onClick = { onNavigate("transport") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 6. Smart Object Finder
-            ActionCard(
-                icon = "🔍",
-                title = stringResource(R.string.feature_finder),
-                subtitle = stringResource(R.string.feature_finder_sub),
-                onClick = { onNavigate("finder") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 7. Entertainment Hub
-            ActionCard(
-                icon = "🎧",
-                title = stringResource(R.string.feature_entertainment),
-                subtitle = stringResource(R.string.feature_entertainment_sub),
-                onClick = { onNavigate("entertainment") }
+            // 4. Section: Everyday Companion
+            SectionHeader(
+                title = stringResource(R.string.home_section_everyday),
+                icon = "🌟",
+                accentBadgeColor = AccentDim
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Phone Assistant (Calling assistant & contacts)
+                ActionCard(
+                    icon = "📞",
+                    title = stringResource(R.string.feature_calling_title),
+                    subtitle = stringResource(R.string.feature_calling_sub),
+                    onClick = { onNavigate("calling") }
+                )
 
-            // Section: Support & Emergency
-            Text(
-                text = stringResource(R.string.home_support_emergency),
-                style = MaterialTheme.typography.titleMedium,
-                color = TextMuted,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 14.dp)
-                    .semantics { heading() }
-            )
+                // Daily News
+                ActionCard(
+                    icon = "📰",
+                    title = stringResource(R.string.feature_news_title),
+                    subtitle = stringResource(R.string.feature_news_sub),
+                    onClick = { onNavigate("news") }
+                )
 
-            // 7. Where Am I?
-            ActionCard(
+                // Entertainment Hub (Live Radio, Stories, Audio Games & Daily Streak)
+                ActionCard(
+                    icon = "🎧",
+                    title = stringResource(R.string.feature_entertainment),
+                    subtitle = stringResource(R.string.feature_entertainment_sub),
+                    badgeText = stringResource(R.string.action_badge_radio_games),
+                    onClick = { onNavigate("entertainment") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // 5. Section: Location & Utilities
+            SectionHeader(
+                title = stringResource(R.string.home_section_utilities),
                 icon = "📍",
-                title = stringResource(R.string.feature_location),
-                subtitle = stringResource(R.string.feature_location_sub),
-                onClick = { onNavigate("location") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 8. Volunteer Help
-            ActionCard(
-                icon = "🤝",
-                title = stringResource(R.string.feature_volunteer),
-                subtitle = stringResource(R.string.feature_volunteer_sub),
-                onClick = { onNavigate("volunteer") }
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 9. Emergency SOS
-            ActionCard(
-                icon = "🚨",
-                title = stringResource(R.string.feature_sos),
-                subtitle = stringResource(R.string.feature_sos_sub),
-                onClick = { onNavigate("sos") },
-                containerColor = EmergencyDim,
-                contentColor = Emergency,
-                borderColor = Emergency.copy(alpha = 0.3f),
-                isDestructive = true
+                accentBadgeColor = AccentDim
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Where Am I?
+                ActionCard(
+                    icon = "📍",
+                    title = stringResource(R.string.feature_location),
+                    subtitle = stringResource(R.string.feature_location_sub),
+                    onClick = { onNavigate("location") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    // Confirmation Logout Dialog
+    if (showLogoutDialog) {
+        ConfirmLogoutDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                voiceManager.stopVoice()
+                sessionManager.clearUser()
+                onLogout()
+            },
+            onDismiss = { showLogoutDialog = false }
+        )
     }
 }

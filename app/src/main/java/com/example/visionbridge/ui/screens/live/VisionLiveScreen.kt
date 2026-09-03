@@ -184,32 +184,14 @@ fun VisionLiveScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.feature_live_vision),
-                            fontWeight = FontWeight.Bold,
-                            color = Accent,
-                            fontSize = 20.sp
-                        )
-                        Text(
-                            text = statusText,
-                            color = if (isMuted) Emergency else TextMuted,
-                            fontSize = 13.sp
-                        )
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_live_vision),
+                subtitle = statusText,
+                onBack = {
+                    viewModel.stopSession()
+                    onBack()
                 },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            viewModel.stopSession()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
-                },
+                backContentDescription = stringResource(R.string.common_back),
                 actions = {
                     // Visual Mode Indicator
                     Surface(
@@ -225,11 +207,7 @@ fun VisionLiveScreen(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                }
             )
         },
         containerColor = BgPrimary
@@ -523,7 +501,7 @@ fun VisionLiveScreen(
                             ),
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
-                            Text(if (isMuted) "🔇 Unmute" else "🎙️ Mute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(if (isMuted) stringResource(R.string.live_unmute) else stringResource(R.string.live_mute), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
                         // Flip Camera
@@ -533,7 +511,7 @@ fun VisionLiveScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary),
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
-                            Text("🔄 Flip", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("🔄 " + stringResource(R.string.camera_flip), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
                         // Interrupt
@@ -544,7 +522,7 @@ fun VisionLiveScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = BgPrimary),
                                 modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                             ) {
-                                Text("✋ Stop", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("✋ " + stringResource(R.string.common_stop), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
                     }

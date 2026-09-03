@@ -56,7 +56,11 @@ class EmergencySosViewModel(application: Application) : AndroidViewModel(applica
         _uiState.value = SosUiState.Sending
         viewModelScope.launch {
             val user = sessionManager.currentUser.value
-            val userId = user?.id ?: "emergency-user"
+            if (user == null || user.id.isBlank()) {
+                _uiState.value = SosUiState.Error("You must be signed in to trigger SOS.")
+                return@launch
+            }
+            val userId = user.id
 
             val (lat, lng) = LocationHelper.getCurrentLocation(getApplication())
 

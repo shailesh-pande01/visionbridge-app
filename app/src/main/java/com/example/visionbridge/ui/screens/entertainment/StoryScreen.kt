@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.visionbridge.R
 import com.example.visionbridge.data.StoryDetail
 import com.example.visionbridge.data.StorySummary
 import com.example.visionbridge.ui.theme.*
@@ -79,12 +81,14 @@ fun StoryScreen(
         }
     }
 
+    val backNavDescription = if (uiState.activeMode == "player") stringResource(R.string.story_back_to_library) else stringResource(R.string.common_back)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = if (uiState.activeMode == "player") "📖 Now Playing" else "📖 Stories & Audiobooks",
+                        text = if (uiState.activeMode == "player") stringResource(R.string.story_title_player) else stringResource(R.string.story_title_library),
                         fontWeight = FontWeight.Bold,
                         color = Accent,
                         fontSize = 22.sp
@@ -100,7 +104,7 @@ fun StoryScreen(
                             }
                         },
                         modifier = Modifier.semantics {
-                            contentDescription = if (uiState.activeMode == "player") "Back to story library" else "Go back to Entertainment Hub"
+                            contentDescription = backNavDescription
                         }
                     ) {
                         Icon(
@@ -192,7 +196,7 @@ private fun StoryLibraryContent(
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "CONTINUE LISTENING",
+                            text = stringResource(R.string.entertainment_continue_listening),
                             color = Accent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -219,7 +223,7 @@ private fun StoryLibraryContent(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.height(42.dp)
                     ) {
-                        Text("Resume", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.entertainment_btn_resume), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -229,7 +233,7 @@ private fun StoryLibraryContent(
 
         // Language Filters
         Text(
-            text = "Language",
+            text = stringResource(R.string.story_filter_language),
             style = MaterialTheme.typography.titleMedium,
             color = TextMuted,
             fontWeight = FontWeight.Bold,
@@ -259,7 +263,7 @@ private fun StoryLibraryContent(
 
         // Genre Filters
         Text(
-            text = "Genre",
+            text = stringResource(R.string.story_filter_genre),
             style = MaterialTheme.typography.titleMedium,
             color = TextMuted,
             fontWeight = FontWeight.Bold,
@@ -289,7 +293,7 @@ private fun StoryLibraryContent(
 
         // Stories Catalog List
         Text(
-            text = "Stories Library (${uiState.stories.size})",
+            text = stringResource(R.string.story_library_header, uiState.stories.size),
             style = MaterialTheme.typography.titleMedium,
             color = TextMuted,
             fontWeight = FontWeight.Bold,
@@ -307,7 +311,7 @@ private fun StoryLibraryContent(
             }
         } else if (uiState.stories.isEmpty()) {
             Text(
-                text = "No stories found matching your filter.",
+                text = stringResource(R.string.story_no_stories),
                 color = TextMuted,
                 modifier = Modifier.padding(16.dp)
             )
@@ -574,7 +578,7 @@ private fun StoryPlayerContent(
                     .height(48.dp)
                     .semantics { contentDescription = "Browse chapters, ${story.chapters.size} available" }
             ) {
-                Text("Chapters (${story.chapters.size})", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.story_btn_chapters, story.chapters.size), fontWeight = FontWeight.Bold)
             }
 
             Button(
@@ -586,7 +590,7 @@ private fun StoryPlayerContent(
                     .height(48.dp)
                     .semantics { contentDescription = if (uiState.transcriptOpen) "Hide chapter text" else "Read chapter text" }
             ) {
-                Text(if (uiState.transcriptOpen) "Hide Text" else "Read Text", fontWeight = FontWeight.Bold)
+                Text(if (uiState.transcriptOpen) stringResource(R.string.story_btn_hide_text) else stringResource(R.string.story_btn_read_text), fontWeight = FontWeight.Bold)
             }
         }
 

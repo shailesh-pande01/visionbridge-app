@@ -213,10 +213,10 @@ fun ObjectFinderScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is FinderUiState.PromptTarget -> {
-                tts.speak("What object are you looking for? Tap the microphone or type below.")
+                tts.speak(context.getString(R.string.finder_prompt_speech))
             }
             is FinderUiState.Processing -> {
-                tts.speak("Looking for $targetObject…")
+                tts.speak(context.getString(R.string.finder_looking_speech, targetObject))
             }
             is FinderUiState.Result -> {
                 ContextMemoryManager.setContext("objectFinder", "object search result", state.analysis.speech)
@@ -231,29 +231,24 @@ fun ObjectFinderScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_finder), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_finder),
+                subtitle = if (targetObject.isNotBlank()) stringResource(R.string.finder_target_subtitle, targetObject) else stringResource(R.string.finder_subtitle),
+                onBack = {
+                    tts.stop()
+                    onBack()
                 },
+                backContentDescription = stringResource(R.string.common_back),
                 actions = {
                     if (targetObject.isNotBlank()) {
-                        TextButton(onClick = { viewModel.changeTarget() }) {
-                            Text("Change Object", color = Accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        TextButton(
+                            onClick = { viewModel.changeTarget() },
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) {
+                            Text(stringResource(R.string.finder_change_target), color = Accent, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                }
             )
         },
         containerColor = BgPrimary
@@ -289,8 +284,7 @@ fun ObjectFinderScreen(
                             textAlign = TextAlign.Center
                         )
 
-                        Spacer(modifier = Modifier.height(32.dp))
-
+                        val tapToSpeakDesc = stringResource(R.string.finder_tap_to_speak)
                         // Big Mic Button
                         Box(
                             modifier = Modifier
@@ -317,7 +311,7 @@ fun ObjectFinderScreen(
                                         )
                                     }
                                 }
-                                .semantics { contentDescription = "Tap to speak object name" },
+                                .semantics { contentDescription = tapToSpeakDesc },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -328,20 +322,20 @@ fun ObjectFinderScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = if (isListeningForTarget) "Listening…" else "Tap to Speak Object",
+                            text = if (isListeningForTarget) stringResource(R.string.finder_listening) else stringResource(R.string.finder_tap_to_speak),
                             color = if (isListeningForTarget) Emergency else TextPrimary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
 
                         Spacer(modifier = Modifier.height(32.dp))
-                        Text(text = "— OR TYPE —", color = TextMuted, fontSize = 14.sp)
+                        Text(text = stringResource(R.string.finder_or_type), color = TextMuted, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(16.dp))
 
                         OutlinedTextField(
                             value = textInput,
                             onValueChange = { textInput = it },
-                            label = { Text("Object Name", color = TextMuted) },
+                            label = { Text(stringResource(R.string.finder_object_name_label), color = TextMuted) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
                             shape = RoundedCornerShape(14.dp),
@@ -368,7 +362,7 @@ fun ObjectFinderScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Accent)
                         ) {
-                            Text("Start Searching", color = BgPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.finder_start_search), color = BgPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -443,7 +437,7 @@ fun ObjectFinderScreen(
                                         ) {
                                             Column(modifier = Modifier.padding(20.dp)) {
                                                 Text(
-                                                    text = if (st.analysis.found) "✅ FOUND: ${st.analysis.objectName.uppercase()}" else "❌ NOT FOUND: ${st.analysis.objectName.uppercase()}",
+                                                    text = if (st.analysis.found) stringResource(R.string.finder_status_found, st.analysis.objectName) else stringResource(R.string.finder_status_not_found, st.analysis.objectName),
                                                     color = if (st.analysis.found) BgPrimary else Color.White,
                                                     fontSize = 22.sp,
                                                     fontWeight = FontWeight.Bold,
@@ -452,7 +446,7 @@ fun ObjectFinderScreen(
                                                 if (st.analysis.direction.isNotBlank()) {
                                                     Spacer(modifier = Modifier.height(8.dp))
                                                     Text(
-                                                        text = "Direction: ${st.analysis.direction}",
+                                                        text = stringResource(R.string.finder_direction, st.analysis.direction),
                                                         color = if (st.analysis.found) BgPrimary else Color.White,
                                                         fontSize = 18.sp,
                                                         fontWeight = FontWeight.Medium
@@ -460,7 +454,7 @@ fun ObjectFinderScreen(
                                                 }
                                                 if (st.analysis.distance.isNotBlank()) {
                                                     Text(
-                                                        text = "Distance: ${st.analysis.distance}",
+                                                        text = stringResource(R.string.finder_distance, st.analysis.distance),
                                                         color = if (st.analysis.found) BgPrimary else Color.White,
                                                         fontSize = 18.sp,
                                                         fontWeight = FontWeight.Medium
@@ -487,7 +481,7 @@ fun ObjectFinderScreen(
                                             ) {
                                                 Column(modifier = Modifier.padding(16.dp)) {
                                                     Text(
-                                                        text = "Can't locate your $targetObject? A volunteer can help you search in real time.",
+                                                        text = stringResource(R.string.finder_volunteer_prompt, targetObject),
                                                         color = TextPrimary,
                                                         fontSize = 17.sp
                                                     )
@@ -498,7 +492,7 @@ fun ObjectFinderScreen(
                                                         shape = RoundedCornerShape(12.dp),
                                                         modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)
                                                     ) {
-                                                        Text("🤝 Connect with Volunteer", color = BgPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                                        Text(stringResource(R.string.confidence_connect_volunteer), color = BgPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                                                     }
                                                 }
                                             }
@@ -544,13 +538,14 @@ fun ObjectFinderScreen(
                         ) {
                             when (val st = uiState) {
                                 is FinderUiState.Camera -> {
+                                    val scanPrompt = stringResource(R.string.finder_scan_to_find, targetObject)
                                     Box(
                                         modifier = Modifier
                                             .size(96.dp)
                                             .clip(CircleShape)
                                             .background(Accent)
                                             .clickable { capture() }
-                                            .semantics { contentDescription = "Scan to find $targetObject" },
+                                            .semantics { contentDescription = scanPrompt },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Box(
@@ -570,7 +565,7 @@ fun ObjectFinderScreen(
                                     }
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Text(
-                                        text = "Scan for $targetObject",
+                                        text = scanPrompt,
                                         color = TextPrimary,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
@@ -587,7 +582,7 @@ fun ObjectFinderScreen(
                                         shape = RoundedCornerShape(16.dp),
                                         colors = ButtonDefaults.buttonColors(containerColor = Accent)
                                     ) {
-                                        Text("Scan Another Angle", fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
+                                        Text(stringResource(R.string.camera_scan_again), fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
                                     }
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Row(
@@ -600,7 +595,7 @@ fun ObjectFinderScreen(
                                             shape = RoundedCornerShape(14.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
                                         ) {
-                                            Text("🔊 Replay", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                            Text("🔊 " + stringResource(R.string.common_replay), fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                         }
                                         Button(
                                             onClick = { tts.stop() },
@@ -609,7 +604,7 @@ fun ObjectFinderScreen(
                                             shape = RoundedCornerShape(14.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
                                         ) {
-                                            Text("⏹ Stop", fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                            Text("⏹ " + stringResource(R.string.common_stop), fontSize = 17.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }

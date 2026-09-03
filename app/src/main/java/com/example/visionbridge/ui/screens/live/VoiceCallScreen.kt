@@ -156,32 +156,14 @@ fun VoiceCallScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.feature_voice_call),
-                            fontWeight = FontWeight.Bold,
-                            color = Accent,
-                            fontSize = 20.sp
-                        )
-                        Text(
-                            text = statusText,
-                            color = if (isMuted) Emergency else TextMuted,
-                            fontSize = 13.sp
-                        )
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_voice_call),
+                subtitle = statusText,
+                onBack = {
+                    viewModel.stopSession()
+                    onBack()
                 },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            viewModel.stopSession()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
-                },
+                backContentDescription = stringResource(R.string.common_back),
                 actions = {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -196,11 +178,7 @@ fun VoiceCallScreen(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                }
             )
         },
         containerColor = BgPrimary
@@ -372,7 +350,7 @@ fun VoiceCallScreen(
                 // Quick prompt pills
                 if (isActive) {
                     Text(
-                        text = "Quick Topics",
+                        text = stringResource(R.string.voice_call_quick_topics),
                         color = TextMuted,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -461,7 +439,7 @@ fun VoiceCallScreen(
                         ),
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
-                        Text(if (isMuted) "🔇 Unmute" else "🎙️ Mute", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(if (isMuted) stringResource(R.string.voice_call_unmute) else stringResource(R.string.voice_call_mute), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
 
                     // Interrupt
@@ -472,7 +450,7 @@ fun VoiceCallScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = BgPrimary),
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                         ) {
-                            Text("✋ Stop", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("✋ " + stringResource(R.string.common_stop), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
 
@@ -486,7 +464,7 @@ fun VoiceCallScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = BgCard, contentColor = TextPrimary),
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
-                        Text("👁️ Vision Live", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("👁️ " + stringResource(R.string.feature_live_vision), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
 

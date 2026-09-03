@@ -21,7 +21,6 @@ class VoiceCommandRoutingTest {
         assertEquals(VoiceIntent.HOME, intent("Vision, go home."))
         assertEquals("reading", route("Vision, read this menu."))
         assertEquals("surroundings", route("Vision, describe my surroundings."))
-        assertEquals("hazard", route("Vision, check for hazards."))
         assertEquals("currency", route("Vision, count my currency."))
         assertEquals("transport", route("Vision, what bus is this?"))
         assertEquals("finder", route("Vision, find my wallet."))
@@ -45,7 +44,6 @@ class VoiceCommandRoutingTest {
     fun `Hindi voice commands map to correct features`() {
         assertEquals(VoiceIntent.SMART_READING, intent("Vision, यह मेन्यू पढ़ो"))
         assertEquals(VoiceIntent.AI_SURROUNDINGS, intent("आसपास क्या है बताओ"))
-        assertEquals(VoiceIntent.HAZARD_PRIORITIZATION, intent("रास्ते में कोई खतरा है क्या"))
         assertEquals(VoiceIntent.CURRENCY_READER, intent("पैसे गिनो"))
         assertEquals(VoiceIntent.PUBLIC_TRANSPORT, intent("बस नंबर क्या है"))
         assertEquals(VoiceIntent.WHERE_AM_I, intent("मैं कहाँ हूँ"))
@@ -57,7 +55,6 @@ class VoiceCommandRoutingTest {
     fun `Marathi voice commands map to correct features`() {
         assertEquals(VoiceIntent.SMART_READING, intent("Vision, हे वाचा"))
         assertEquals(VoiceIntent.AI_SURROUNDINGS, intent("माझ्या समोर काय आहे"))
-        assertEquals(VoiceIntent.HAZARD_PRIORITIZATION, intent("काही धोका आहे का"))
         assertEquals(VoiceIntent.CURRENCY_READER, intent("पैसे मोजा"))
         assertEquals(VoiceIntent.PUBLIC_TRANSPORT, intent("बस फलाट नंबर सांगा"))
         assertEquals(VoiceIntent.WHERE_AM_I, intent("मी कुठे आहे"))

@@ -5,8 +5,18 @@ data class User(
     val name: String,
     val username: String,
     val role: String, // "lowVisionUser", "volunteer", "admin"
-    val token: String? = null
+    val token: String? = null,
+    val email: String? = null,
+    val refreshToken: String? = null
 )
+
+sealed interface AuthState {
+    object Checking : AuthState
+    data class Authenticated(val user: User) : AuthState
+    object Unauthenticated : AuthState
+    data class SessionExpired(val message: String = "Session expired. Please log in again.") : AuthState
+    data class Error(val message: String) : AuthState
+}
 
 data class SceneAnalysis(
     val scene: String,
@@ -16,12 +26,6 @@ data class SceneAnalysis(
     val obstacles: List<String>,
     val lighting: String,
     val timeOfDay: String
-)
-
-data class HazardAnalysis(
-    val speech: String,
-    val sceneSummary: String,
-    val timestamp: Long = System.currentTimeMillis()
 )
 
 data class CurrencyItem(
@@ -102,12 +106,21 @@ data class EmergencyContact(
 )
 
 data class AssistantAction(
-    val action: String, // "OPEN_FEATURE", "CAPTURE_IMAGE", "ASK_CONTEXTUAL_QUESTION", "FIND_OBJECT", "GO_HOME", "START_VOLUNTEER_HELP", "EMERGENCY_SOS", "CONFIRM", "REPEAT_LAST", "STOP_SPEAKING", "CANCEL", "UNKNOWN"
-    val target: String? = null, // "surroundings", "hazard", "reading", "currency", "transport", "objectFinder", "location", "volunteer", "emergency", "home"
+    val action: String, // e.g. "OPEN_FEATURE", "CAPTURE_IMAGE", "ASK_CONTEXTUAL_QUESTION", "FIND_OBJECT", "GO_HOME", etc.
+    val target: String? = null, // "surroundings", "reading", "currency", "transport", "objectFinder", "location", "volunteer", "emergency", "home", "news", "calling", "liveVision", "voiceCall", "radio", "stories", "games", "progress"
     val question: String? = null,
+    val answer: String? = null,
     val objectName: String? = null,
+    val contactName: String? = null,
+    val phoneNumber: String? = null,
     val message: String? = null,
     val speech: String? = null,
+    val storyQuery: String? = null,
+    val genre: String? = null,
+    val newsCategory: String? = null,
+    val speed: String? = null,
+    val newsLang: String? = null,
+    val needsNewImage: Boolean = false,
     val confidence: Double = 0.8,
     val type: String? = null // "navigation", "action", "answer", "clarification", "error"
 )

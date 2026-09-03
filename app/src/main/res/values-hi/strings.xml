@@ -15,6 +15,28 @@
     <string name="common_delete">हटाएँ</string>
     <string name="common_submit">भेजें</string>
     <string name="common_confirm">पुष्टि करें</string>
+    <string name="common_add">जोड़ें</string>
+    <string name="common_edit">संपादित करें</string>
+    <string name="common_refresh">ताज़ा करें</string>
+    <string name="common_play">चलाएँ</string>
+    <string name="common_pause">रोकें</string>
+    <string name="common_resume">जारी रखें</string>
+    <string name="common_selected">चुना गया</string>
+    <string name="common_not_selected">नहीं चुना गया</string>
+    <string name="common_show">दिखाएँ</string>
+    <string name="common_hide">छिपाएँ</string>
+    <string name="common_username_or_email">यूज़रनेम या ईमेल</string>
+    <string name="common_accessibility_hub">सुलभता केंद्र</string>
+    <string name="action_card_tap_to_open">%1$s. %2$s. खोलने के लिए टैप करें।</string>
+
+    <!-- Badges -->
+    <string name="action_badge_realtime">रियल-टाइम</string>
+    <string name="action_badge_audio_call">ऑडियो कॉल</string>
+    <string name="action_badge_live_volunteer">लाइव वॉलंटियर</string>
+    <string name="action_badge_radio_games">रेडियो और गेम्स</string>
+    <string name="action_badge_live_stream">लाइव स्ट्रीम</string>
+    <string name="action_badge_audiobooks">ऑडियोबुक्स</string>
+    <string name="action_badge_xp_25">+25 XP</string>
 
     <!-- Auth -->
     <string name="auth_login_title">VisionBridge में लॉगिन करें</string>
@@ -33,6 +55,19 @@
     <string name="auth_role_volunteer">वॉलंटियर (सहायक)</string>
     <string name="auth_role_volunteer_desc">वीडियो कॉल के माध्यम से कम दृष्टि वाले लोगों की वास्तविक समय में सहायता करें।</string>
     <string name="auth_logout">लॉगआउट</string>
+    <string name="auth_email">ईमेल (वैकल्पिक)</string>
+    <string name="auth_session_expired">आपका सत्र समाप्त हो गया है। कृपया पुनः साइन इन करें।</string>
+    <string name="auth_err_both_fields">कृपया यूज़रनेम और पासवर्ड दोनों भरें।</string>
+    <string name="auth_err_all_fields">कृपया सभी आवश्यक फ़ील्ड भरें।</string>
+    <string name="auth_err_password_len">पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।</string>
+    <string name="auth_err_password_match">दोनों पासवर्ड एक जैसे नहीं हैं।</string>
+    <string name="auth_err_email_invalid">कृपया एक मान्य ईमेल पता दर्ज करें या इसे खाली छोड़ दें।</string>
+    <string name="splash_loading">सत्र की जाँच हो रही है…</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_sign_out_title">लॉगआउट करें?</string>
+    <string name="dialog_sign_out_message">क्या आप वाकई VisionBridge से लॉगआउट करना चाहते हैं? दोबारा लॉगिन करने के लिए आपको पासवर्ड की आवश्यकता होगी।</string>
+    <string name="dialog_sign_out_talkback">VisionBridge से लॉगआउट करें</string>
 
     <!-- Language -->
     <string name="language_label">भाषा</string>
@@ -44,38 +79,114 @@
     <string name="home_title">VisionBridge</string>
     <string name="home_quick_actions">त्वरित क्रियाएँ</string>
     <string name="home_support_emergency">सहायता और आपातकाल</string>
+    <string name="home_section_ai_assistance">AI विज़न सहायता</string>
+    <string name="home_section_human_assistance">मानवीय सहायता और सुरक्षा</string>
+    <string name="home_section_everyday">दैनिक साथी</string>
+    <string name="home_section_utilities">स्थान और उपयोगिताएँ</string>
     <string name="voice_tap_to_speak">बोलने के लिए टैप करें या दबाकर रखें</string>
     <string name="voice_listening">सुन रहा हूँ — कहिए “Vision”</string>
     <string name="voice_processing">समझ रहा हूँ…</string>
     <string name="voice_hint">कहिए “Vision”, फिर किसी भी सुविधा का नाम लें।</string>
 
+    <!-- Voice Status -->
+    <string name="voice_status_ready">आवाज़ तैयार है</string>
+    <string name="voice_status_listening_for_vision">“Vision” के लिए सुन रहा हूँ</string>
+    <string name="voice_status_listening_for_command">कमांड के लिए सुन रहा हूँ…</string>
+    <string name="voice_status_processing_command">कमांड समझ रहा हूँ…</string>
+    <string name="voice_status_opening_feature">सुविधा खोली जा रही है…</string>
+    <string name="voice_status_speaking">बोल रहा हूँ…</string>
+    <string name="voice_status_paused">वॉयस असिस्टेंट रुका हुआ है</string>
+    <string name="voice_status_blocked">माइक्रोफ़ोन अनुमति आवश्यक है</string>
+    <string name="voice_status_unsupported">वॉयस समर्थित नहीं है</string>
+    <string name="voice_status_error">समझ नहीं सका</string>
+    <string name="voice_status_say_vision_to_speak">बोलने के लिए “Vision, ...” कहें</string>
+    <string name="voice_status_tap_or_say_vision">टैप करें या “Vision” कहें</string>
+    <string name="voice_status_description">वॉयस असिस्टेंट क्षेत्र। वर्तमान स्थिति: %1$s। बातचीत के लिए टैप करें।</string>
+
     <!-- Feature Names & Subtitles -->
     <string name="feature_reading">टेक्स्ट पढ़ें</string>
     <string name="feature_reading_sub">मेन्यू, साइनबोर्ड, लेबल पर कैमरा लाएँ</string>
+    <string name="reading_subtitle">टेक्स्ट निष्कर्षण और पठन</string>
+    <string name="reading_processing_speech">टेक्स्ट पढ़ रहा हूँ। कृपया प्रतीक्षा करें।</string>
+    <string name="reading_btn_read_again">🔊 फिर सुनाएँ</string>
+    <string name="reading_btn_stop">⏹ रोकें</string>
+    <string name="reading_btn_capture_again">फिर से स्कैन करें</string>
+    <string name="reading_talkback_read_again">फिर सुनाएँ। टेक्स्ट को दोबारा बोलकर सुनाता है।</string>
+    <string name="reading_talkback_stop">बोलना बंद करें।</string>
+    <string name="reading_talkback_capture_again">फिर से स्कैन करें। कैमरा फिर से खोलता है।</string>
 
     <string name="feature_surroundings">आसपास का विवरण</string>
     <string name="feature_surroundings_sub">आपके सामने क्या है समझें</string>
-
-    <string name="feature_hazard">खतरा पहचान मोड</string>
-    <string name="feature_hazard_sub">रास्ते की बाधाओं की निरंतर निगरानी</string>
+    <string name="surroundings_subtitle">दृश्य और बाधा विश्लेषक</string>
+    <string name="surroundings_processing_speech">आपके आसपास का विश्लेषण कर रहा हूँ। कृपया प्रतीक्षा करें।</string>
 
     <string name="feature_currency">करेंसी रीडर</string>
     <string name="feature_currency_sub">नोट, सिक्के पहचानें और कुल राशि जानें</string>
+    <string name="currency_subtitle">नोट और सिक्का पहचानकर्ता</string>
+    <string name="currency_processing_speech">मुद्रा का विश्लेषण कर रहा हूँ। कृपया प्रतीक्षा करें।</string>
 
     <string name="feature_transport">सार्वजनिक परिवहन</string>
     <string name="feature_transport_sub">बस, ट्रेन, प्लेटफॉर्म और दिशा बोर्ड पढ़ें</string>
+    <string name="transport_subtitle">बस, मेट्रो और प्लेटफ़ॉर्म मार्गदर्शन</string>
+    <string name="transport_processing_speech">परिवहन जानकारी स्कैन की जा रही है। कृपया प्रतीक्षा करें।</string>
 
     <string name="feature_finder">वस्तु खोजें</string>
     <string name="feature_finder_sub">अपना बटुआ, चाबियाँ, बोतल आदि ढूँढें</string>
+    <string name="finder_subtitle">स्मार्ट वस्तु लोकेटर</string>
+    <string name="finder_target_subtitle">लक्ष्य: %1$s</string>
+    <string name="finder_prompt_speech">आप कौन सी वस्तु ढूँढ रहे हैं? माइक्रोफ़ोन पर टैप करें या नीचे लिखें।</string>
+    <string name="finder_looking_speech">%1$s खोज रहे हैं…</string>
+    <string name="finder_change_target">लक्ष्य बदलें</string>
+    <string name="finder_tap_to_speak">वस्तु का नाम बोलने के लिए टैप करें</string>
+    <string name="finder_listening">सुन रहा हूँ…</string>
+    <string name="finder_or_type">— या लिखें —</string>
+    <string name="finder_object_name_label">वस्तु का नाम</string>
+    <string name="finder_start_search">खोजना शुरू करें</string>
+    <string name="finder_scan_to_find">%1$s ढूँढने के लिए स्कैन करें</string>
+    <string name="finder_status_found">✅ मिल गया: %1$s</string>
+    <string name="finder_status_not_found">❌ नहीं मिला: %1$s</string>
+    <string name="finder_volunteer_prompt">क्या आपका %1$s नहीं मिल पा रहा है? एक वॉलंटियर रीयल-टाइम में ढूँढने में आपकी मदद कर सकता है।</string>
 
     <string name="feature_location">मैं कहाँ हूँ?</string>
     <string name="feature_location_sub">सड़क का नाम और आसपास के मुख्य स्थल जानें</string>
+    <string name="location_subtitle">लाइव लोकेशन और आसपास के स्थल</string>
+    <string name="location_finding_speech">आपका स्थान पता किया जा रहा है। कृपया प्रतीक्षा करें।</string>
+    <string name="location_copy_btn">📋 लोकेशन कॉपी करें</string>
+    <string name="location_share_btn">↗ WhatsApp पर शेयर करें</string>
+    <string name="location_copied_toast">लोकेशन क्लिपबोर्ड पर कॉपी की गई</string>
 
     <string name="feature_volunteer">वॉलंटियर सहायता</string>
     <string name="feature_volunteer_sub">किसी मददगार वॉलंटियर से जुड़ें</string>
+    <string name="volunteer_help_subtitle">लाइव वॉलंटियर सहायता</string>
+    <string name="volunteer_help_searching_speech">सहायता अनुरोध भेज दिया गया है। उपलब्ध वॉलंटियर की तलाश की जा रही है।</string>
+    <string name="volunteer_help_accepted_speech">%1$s ने आपका अनुरोध स्वीकार कर लिया है। कॉल कनेक्ट हो रही है...</string>
+    <string name="volunteer_help_connecting_speech">वॉलंटियर से कनेक्ट हो रहे हैं...</string>
+    <string name="volunteer_accepted_title">%1$s ने स्वीकार किया!</string>
+    <string name="volunteer_connecting_desc">लाइव वीडियो कॉल कनेक्शन स्थापित किया जा रहा है...</string>
+    <string name="volunteer_call_badge">लाइव सहायता कॉल</string>
+    <string name="volunteer_connected_title">वॉलंटियर से कनेक्टेड</string>
+    <string name="volunteer_connected_instruction">वॉलंटियर आपका बैक कैमरा फीड देख सकते हैं और आपकी आवाज़ सुन सकते हैं। अपनी ज़रूरत सामान्य रूप से बताएं।</string>
+    <string name="volunteer_btn_mute">🎙️ म्यूट</string>
+    <string name="volunteer_btn_unmute">🔇 अनम्यूट</string>
+    <string name="volunteer_preview_debug">लोकल कैमरा प्रीव्यू:</string>
+    <string name="volunteer_dashboard_subtitle">सहायता पोर्टल</string>
+    <string name="volunteer_welcome">स्वागत है, %1$s!</string>
+    <string name="volunteer_ready_desc">कम दृष्टि वाले उपयोगकर्ताओं की सहायता के लिए तैयार।</string>
+    <string name="volunteer_assisting_user">सहायता दी जा रही है: %1$s</string>
+    <string name="volunteer_low_vision_user">कम दृष्टि वाला उपयोगकर्ता</string>
 
     <string name="feature_sos">आपातकालीन SOS</string>
     <string name="feature_sos_sub">तुरंत आपातकालीन संदेश और GPS लोकेशन भेजें</string>
+    <string name="sos_subtitle">तत्काल आपातकालीन चेतावनी और GPS</string>
+    <string name="sos_contacts_subtitle">विश्वसनीय आपातकालीन नंबर</string>
+    <string name="sos_speech_countdown">आपातकालीन SOS सक्रिय हुआ। 5 सेकंड में अलर्ट भेजा जा रहा है। रोकने के लिए रद्द करें पर टैप करें।</string>
+    <string name="sos_speech_sending">आपकी लाइव लोकेशन के साथ आपातकालीन संकट अलर्ट भेजा जा रहा है।</string>
+    <string name="sos_speech_active">आपातकालीन SOS सक्रिय है। आपके संपर्कों को WhatsApp पर सूचित कर दिया गया है।</string>
+    <string name="sos_speech_cancelled">आपातकालीन SOS रद्द कर दिया गया।</string>
+    <string name="sos_dispatching">आपातकालीन व्हाट्सएप अलर्ट भेजा जा रहा है…</string>
+    <string name="sos_inactive">आपातकालीन मोड निष्क्रिय।</string>
+    <string name="sos_add_contact_dialog_title">नया संपर्क जोड़ें</string>
+    <string name="sos_add_contact_btn">➕ जोड़ें</string>
 
     <string name="feature_entertainment">मनोरंजन हब</string>
     <string name="feature_entertainment_sub">लाइव रेडियो, कहानियाँ, गेम्स व दैनिक स्ट्रीक</string>
@@ -83,6 +194,80 @@
     <string name="feature_stories">कहानियाँ व ऑडियोबुक्स</string>
     <string name="feature_games">ऑडियो गेम्स</string>
     <string name="feature_progress">मेरी प्रोग्रेस</string>
+
+    <string name="entertainment_title">🎧 मनोरंजन हब</string>
+    <string name="entertainment_subtitle">ऑडियोबुक्स, रेडियो और गेम्स</string>
+    <string name="entertainment_voice_banner_title">वॉयस-फर्स्ट मनोरंजन</string>
+    <string name="entertainment_voice_banner_desc">कहें “Vision, स्थानीय रेडियो चलाओ” या “Vision, दैनिक चुनौती शुरू करो”।</string>
+    <string name="entertainment_voice_banner_talkback">आप कह सकते हैं: Vision, स्थानीय रेडियो चलाओ। Vision, कहानियाँ खोलो। Vision, आज की चुनौती शुरू करो।</string>
+    <string name="entertainment_continue_listening">सुनना जारी रखें</string>
+    <string name="entertainment_btn_resume">▶ जारी रखें</string>
+    <string name="entertainment_resume_talkback">%1$s को सुनना जारी रखें। खोलने के लिए टैप करें।</string>
+    <string name="entertainment_channels_header">मनोरंजन चैनल</string>
+    <string name="entertainment_card_radio_title">लाइव रेडियो</string>
+    <string name="entertainment_card_radio_sub">लाइव स्थानीय और क्षेत्रीय रेडियो स्टेशन सुनें</string>
+    <string name="entertainment_card_stories_title">कहानियाँ और ऑडियोबुक्स</string>
+    <string name="entertainment_card_stories_sub">अंग्रेजी, हिंदी और मराठी में क्लासिक्स और लोककथाएं</string>
+    <string name="entertainment_card_games_title">गेम्स और दैनिक चुनौती</string>
+    <string name="entertainment_card_games_sub">ट्रिविया, पहेलियां, 20 सवाल और दैनिक स्ट्रीक</string>
+    <string name="entertainment_card_progress_title">मेरी प्रोग्रेस और स्ट्रीक</string>
+    <string name="entertainment_card_progress_sub">अपनी XP, दैनिक स्ट्रीक और उपलब्धियां देखें</string>
+
+    <string name="radio_title">लाइव रेडियो</string>
+    <string name="radio_now_playing">अब चल रहा है</string>
+    <string name="radio_status_playing">लाइव • चल रहा है</string>
+    <string name="radio_btn_stop">रेडियो रोकें</string>
+    <string name="radio_filters_header">स्टेशन ब्राउज़ करें</string>
+    <string name="radio_btn_browse">स्टेशन खोजें</string>
+    <string name="radio_no_stations">इस श्रेणी के लिए कोई रेडियो स्टेशन नहीं मिला।</string>
+    <string name="radio_filter_local">📍 स्थानीय / निकटवर्ती</string>
+    <string name="radio_filter_marathi">🚩 मराठी</string>
+    <string name="radio_filter_hindi">📻 हिन्दी</string>
+    <string name="radio_filter_english">🌐 English</string>
+
+    <string name="story_title_library">कहानियाँ और ऑडियोबुक्स</string>
+    <string name="story_title_player">अब चल रहा है</string>
+    <string name="story_back_to_library">लाइब्रेरी पर वापस जाएँ</string>
+    <string name="story_filter_language">भाषा</string>
+    <string name="story_filter_genre">शैली</string>
+    <string name="story_library_header">कहानी लाइब्रेरी</string>
+    <string name="story_no_stories">इस फ़िल्टर के लिए कोई कहानी उपलब्ध नहीं है।</string>
+    <string name="story_btn_chapters">अध्याय</string>
+    <string name="story_btn_hide_text">टेक्स्ट छिपाएँ</string>
+    <string name="story_btn_read_text">टेक्स्ट पढ़ें</string>
+    <string name="story_lang_all">🌐 सभी</string>
+    <string name="story_lang_en">🇬🇧 English</string>
+    <string name="story_lang_hi">🇮🇳 हिंदी</string>
+    <string name="story_lang_mr">🇮🇳 मराठी</string>
+    <string name="story_genre_all">📚 सभी कहानियाँ</string>
+    <string name="story_genre_popular">⭐ लोकप्रिय</string>
+    <string name="story_genre_mystery">🕵️ रहस्य</string>
+    <string name="story_genre_adventure">🗺️ रोमांच</string>
+    <string name="story_genre_fantasy">✨ फैंटेसी</string>
+    <string name="story_genre_horror">👻 डरावनी</string>
+    <string name="story_genre_classics">📖 क्लासिक्स</string>
+    <string name="story_genre_comedy">😂 लोककथाएं</string>
+
+    <string name="games_title">ऑडियो गेम्स और दैनिक</string>
+    <string name="games_btn_hear_again">प्रश्न फिर से सुनें</string>
+    <string name="games_btn_need_clue">संकेत चाहिए?</string>
+    <string name="games_your_answer_header">आपका उत्तर</string>
+    <string name="games_placeholder_answer">अपना उत्तर लिखें या बोलें…</string>
+    <string name="games_btn_submit">उत्तर सबमिट करें</string>
+    <string name="games_btn_speak_answer">🎙️ उत्तर बोलें</string>
+    <string name="games_btn_new_round">🔄 अगला राउंड</string>
+    <string name="games_mode_daily">🏆 दैनिक चुनौती</string>
+    <string name="games_mode_trivia">❓ ट्रिविया</string>
+    <string name="games_mode_riddles">🧩 पहेलियां</string>
+    <string name="games_mode_twenty_questions">💭 20 सवाल</string>
+    <string name="games_mode_memory">🧠 मेमोरी गेम</string>
+
+    <string name="progress_title">⭐ मेरी प्रोग्रेस</string>
+    <string name="progress_total_xp">कुल XP</string>
+    <string name="progress_day_streak">दिनों की स्ट्रीक</string>
+    <string name="progress_correct">सही उत्तर</string>
+    <string name="progress_btn_hear_stats">मेरी प्रोग्रेस सुनें</string>
+    <string name="progress_achievements_header">🏆 उपलब्धियां</string>
 
     <!-- Camera / General Actions -->
     <string name="camera_tap_to_capture">फोटो लेने के लिए टैप करें</string>
@@ -99,14 +284,10 @@
     <string name="reading_no_text">इस चित्र में कोई पठनीय टेक्स्ट नहीं मिला।</string>
     <string name="reading_hint">किसी साइनबोर्ड, लेबल, मेन्यू या दस्तावेज़ पर कैमरा केंद्रित करें</string>
 
-    <!-- Surroundings & Hazard -->
+    <!-- Surroundings -->
     <string name="surroundings_scene">पहचाना गया दृश्य</string>
     <string name="surroundings_obstacles">रास्ते की बाधाएँ</string>
     <string name="surroundings_objects">वस्तुएँ</string>
-    <string name="hazard_active">🚨 खतरा पहचान मोड चालू है</string>
-    <string name="hazard_start">खतरा पहचान शुरू करें</string>
-    <string name="hazard_stop">खतरा पहचान रोकें</string>
-    <string name="hazard_no_change">रास्ता साफ़ है। कोई नया बदलाव नहीं।</string>
 
     <!-- Currency -->
     <string name="currency_total">कुल राशि: %1$s</string>
@@ -241,6 +422,155 @@
     <string name="voice_call_prompt_news">आज की ताज़ा ख़बरें क्या हैं?</string>
     <string name="voice_call_prompt_tech">क्वांटम कंप्यूटिंग सरल शब्दों में समझाओ।</string>
     <string name="voice_call_prompt_capital">ऑस्ट्रेलिया की राजधानी क्या है?</string>
+    <string name="camera_flip">कैमरा बदलें</string>
+    <string name="voice_call_quick_topics">त्वरित विषय</string>
     <string name="voice_call_prompt_day">मेरे दिन की योजना बनाने में मदद करो।</string>
     <string name="voice_call_prompt_fact">तकनीक से जुड़ा एक रोचक तथ्य बताओ।</string>
+
+    <!-- Calling Assistant -->
+    <string name="feature_calling_title">फोन असिस्टेंट</string>
+    <string name="feature_calling_sub">आवाज द्वारा फोन कॉलिंग व संपर्क सूची</string>
+    <string name="calling_subtitle">वॉयस डायलर और स्पीड डायल</string>
+    <string name="calling_voice_hint">कहिए “Vision, माँ को कॉल करो” या “Vision, 9876543210 पर कॉल करो”</string>
+    <string name="calling_tab_contacts">संपर्क (%1$d)</string>
+    <string name="calling_tab_recent">हाल की कॉल्स</string>
+    <string name="calling_no_recent">कोई हाल की कॉल नहीं।</string>
+    <string name="calling_btn_call">📞 कॉल करें</string>
+    <string name="calling_add_contact">नया संपर्क जोड़ें</string>
+    <string name="calling_field_name">नाम</string>
+    <string name="calling_field_phone">फ़ोन नंबर</string>
+    <string name="calling_field_relation">संबंध (उदा. माँ, डॉक्टर)</string>
+
+    <!-- Daily News Assistant -->
+    <string name="feature_news_title">दैनिक समाचार</string>
+    <string name="feature_news_sub">सुलभ वॉइस-फर्स्ट दैनिक व स्थानीय समाचार</string>
+    <string name="news_subtitle">AI दैनिक ऑडियो डाइजेस्ट</string>
+    <string name="news_voice_hint">कहिए “Vision, समाचार सुनाओ”</string>
+    <string name="news_btn_refresh">🔄 ताज़ा करें</string>
+    <string name="news_cat_general">मुख्य समाचार</string>
+    <string name="news_cat_tech">तकनीक</string>
+    <string name="news_cat_business">व्यापार</string>
+    <string name="news_cat_science">विज्ञान</string>
+    <string name="news_cat_sports">खेल</string>
+    <string name="news_cat_entertainment">मनोरंजन</string>
+    <string name="news_story_counter">समाचार %1$d / %2$d</string>
+    <string name="news_briefing_header">दैनिक समाचार ब्रीफिंग</string>
+    <string name="news_loading_stories">समाचार लोड हो रहे हैं…</string>
+    <string name="news_err_could_not_load">समाचार ब्रीफिंग लोड नहीं हो सकी।</string>
+    <string name="news_btn_play">▶️ चलाएँ</string>
+    <string name="news_btn_pause">⏸️ रोकें</string>
+
+    <!-- Gesture-Based Interaction -->
+    <string name="gesture_listening_prompt">सुन रहा हूँ।</string>
+    <string name="gesture_home_hint">सुझाव: बिना “Vision” कहे सीधे कमांड बोलने के लिए स्क्रीन पर कहीं भी दो उंगलियों से दो बार टैप करें।</string>
+    <string name="gesture_home_hint_talkback">वॉयस एक्टिवेशन शॉर्टकट: सीधे कमांड बोलने के लिए स्क्रीन पर दो उंगलियों से डबल टैप करें।</string>
+    <string name="gesture_settings_title">जेस्चर नियंत्रण</string>
+    <string name="gesture_setting_touch">दो उंगलियों से डबल टैप</string>
+    <string name="gesture_setting_touch_desc">सीधे वॉयस कमांड बोलने के लिए स्क्रीन पर कहीं भी दो उंगलियों से डबल टैप करें</string>
+    <string name="gesture_setting_shake">हिलाकर सुनें</string>
+    <string name="gesture_setting_shake_desc">वॉयस पहचान शुरू करने के लिए अपने फोन को धीरे से हिलाएँ</string>
+    <string name="gesture_setting_haptics">कंपन प्रतिक्रिया</string>
+    <string name="gesture_setting_haptics_desc">जेस्चर पहचाने जाने पर हल्का सा कंपन करें</string>
+
+    <!-- Admin Dashboard -->
+    <string name="admin_title">प्रशासक</string>
+    <string name="admin_dashboard_title">एडमिन डैशबोर्ड</string>
+    <string name="admin_dashboard_badge">कंसोल</string>
+    <string name="admin_login_link">एडमिन लॉगिन</string>
+    <string name="admin_login_title">प्रशासक लॉगिन</string>
+    <string name="admin_login_subtitle">प्रतिबंधित क्षेत्र — केवल VisionBridge संचालन।</string>
+    <string name="admin_login_button">एडमिन के रूप में लॉगिन करें</string>
+    <string name="admin_back_to_main_login">← मुख्य लॉगिन पर वापस</string>
+    <string name="admin_login_err_not_admin">इस खाते को प्रशासक की अनुमति नहीं है।</string>
+    <string name="admin_login_err_generic">लॉगिन नहीं हो सका। कृपया पुनः प्रयास करें।</string>
+    <string name="admin_err_access_denied">आपको यह डेटा देखने की अनुमति नहीं है।</string>
+    <string name="admin_err_fetch_failed">एडमिन डेटा लोड नहीं हो सका। कृपया पुनः प्रयास करें।</string>
+    <string name="admin_no_results">कोई रिकॉर्ड नहीं मिला।</string>
+
+    <!-- Admin Navigation Sections -->
+    <string name="admin_nav_overview">अवलोकन</string>
+    <string name="admin_nav_users">उपयोगकर्ता</string>
+    <string name="admin_nav_volunteers">वॉलंटियर</string>
+    <string name="admin_nav_call_logs">कॉल रिकॉर्ड</string>
+    <string name="admin_nav_emergency">आपातकालीन SOS</string>
+    <string name="admin_nav_profile">प्रोफ़ाइल</string>
+
+    <!-- Admin Section Subtitles -->
+    <string name="admin_sub_overview">VisionBridge समुदाय का लाइव सारांश।</string>
+    <string name="admin_sub_users">पंजीकृत दृष्टिबाधित उपयोगकर्ता और विवरण।</string>
+    <string name="admin_sub_volunteers">पंजीकृत वॉलंटियर और उनकी सक्रिय स्थिति।</string>
+    <string name="admin_sub_call_logs">प्रत्येक वॉलंटियर कॉल सत्र — प्रतिभागी, अवधि व स्थिति।</string>
+    <string name="admin_sub_emergency">वास्तविक समय आपातकालीन अलर्ट और WhatsApp सूचनाएं।</string>
+    <string name="admin_sub_profile">आपका प्रशासक खाता व सुरक्षा विवरण।</string>
+
+    <!-- Admin Overview Stats -->
+    <string name="admin_stat_total_users">कुल उपयोगकर्ता</string>
+    <string name="admin_stat_total_volunteers">कुल वॉलंटियर</string>
+    <string name="admin_stat_active_volunteers">सक्रिय वॉलंटियर</string>
+    <string name="admin_stat_total_requests">कुल सहायता अनुरोध</string>
+    <string name="admin_stat_active_calls">चालू कॉल</string>
+    <string name="admin_stat_completed_calls">पूर्ण कॉल</string>
+    <string name="admin_stat_active_sos">सक्रिय आपातकालीन SOS</string>
+    <string name="admin_quick_actions_title">त्वरित कार्य</string>
+    <string name="admin_realtime_badge">लाइव रीयल-टाइम</string>
+
+    <!-- Admin Users Management -->
+    <string name="admin_users_search_placeholder">नाम या यूज़रनेम से खोजें…</string>
+    <string name="admin_users_col_name">नाम</string>
+    <string name="admin_users_col_username">यूज़रनेम</string>
+    <string name="admin_users_col_emergency_contact">आपातकालीन WhatsApp</string>
+    <string name="admin_users_col_registered">पंजीकरण तिथि</string>
+    <string name="admin_users_col_role">भूमिका</string>
+
+    <!-- Admin Volunteers Management -->
+    <string name="admin_volunteers_search_placeholder">वॉलंटियर खोजें…</string>
+    <string name="admin_volunteers_availability">उपलब्धता</string>
+    <string name="admin_volunteers_available">उपलब्ध</string>
+    <string name="admin_volunteers_unavailable">अनुपलब्ध</string>
+    <string name="admin_volunteers_accepted_requests">स्वीकृत</string>
+    <string name="admin_volunteers_completed_requests">पूर्ण</string>
+    <string name="admin_volunteers_filter_all">सभी</string>
+
+    <!-- Admin Call Logs -->
+    <string name="admin_call_logs_search_placeholder">उपयोगकर्ता या वॉलंटियर से खोजें…</string>
+    <string name="admin_call_logs_user">उपयोगकर्ता</string>
+    <string name="admin_call_logs_volunteer">वॉलंटियर</string>
+    <string name="admin_call_logs_start">कॉल शुरू</string>
+    <string name="admin_call_logs_end">कॉल समाप्त</string>
+    <string name="admin_call_logs_duration">अवधि</string>
+    <string name="admin_call_logs_status">स्थिति</string>
+    <string name="admin_call_logs_from">से तारीख</string>
+    <string name="admin_call_logs_to">तक तारीख</string>
+    <string name="admin_call_logs_sort_latest">नई पहले</string>
+    <string name="admin_call_logs_sort_oldest">पुरानी पहले</string>
+
+    <!-- Admin Status Badges -->
+    <string name="admin_status_active">चालू</string>
+    <string name="admin_status_completed">पूर्ण</string>
+    <string name="admin_status_cancelled">रद्द</string>
+    <string name="admin_status_failed">असफल</string>
+    <string name="admin_status_pending">लंबित</string>
+    <string name="admin_status_ended">समाप्त</string>
+
+    <!-- Admin Emergency SOS Monitoring -->
+    <string name="admin_sos_title">आपातकालीन SOS अलर्ट</string>
+    <string name="admin_sos_active_count">%1$d सक्रिय आपातकालीन अलर्ट</string>
+    <string name="admin_sos_user">अनुरोधकर्ता</string>
+    <string name="admin_sos_location">GPS स्थान</string>
+    <string name="admin_sos_whatsapp_sent">WhatsApp भेजा गया</string>
+    <string name="admin_sos_whatsapp_failed">WhatsApp विफल</string>
+    <string name="admin_sos_resolve_btn">हल हुआ चिह्नित करें</string>
+    <string name="admin_sos_confirm_resolve">क्या आप इस आपातकालीन घटना को हल हुआ चिह्नित करना चाहते हैं?</string>
+
+    <!-- Admin Pagination -->
+    <string name="admin_pagination_prev">← पिछला</string>
+    <string name="admin_pagination_next">अगला →</string>
+    <string name="admin_pagination_page_of">पेज %1$d / %2$d</string>
+
+    <!-- Admin Profile -->
+    <string name="admin_profile_role_title">प्रशासक</string>
+    <string name="admin_profile_badge">सुपर एडमिन</string>
+    <string name="admin_btn_sign_out">एडमिन साइन आउट</string>
+    <string name="admin_home_banner_title">प्रशासक कंसोल</string>
+    <string name="admin_home_banner_sub">समुदाय गतिविधि देखने के लिए एडमिन डैशबोर्ड पर जाएं</string>
 </resources>

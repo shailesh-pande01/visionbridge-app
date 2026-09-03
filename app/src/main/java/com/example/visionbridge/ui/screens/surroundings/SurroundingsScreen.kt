@@ -61,7 +61,6 @@ import java.util.concurrent.Executors
 @Composable
 fun SurroundingsScreen(
     onBack: () -> Unit,
-    onNavigateHazard: () -> Unit,
     onVolunteerHelp: () -> Unit,
     viewModel: SurroundingsViewModel = viewModel()
 ) {
@@ -208,7 +207,7 @@ fun SurroundingsScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is SurroundingsUiState.Processing -> {
-                tts.speak(context.getString(R.string.common_loading))
+                tts.speak(context.getString(R.string.surroundings_processing_speech))
             }
             is SurroundingsUiState.Result -> {
                 ContextMemoryManager.setContext("surroundings", "scene description", state.analysis.description)
@@ -217,7 +216,7 @@ fun SurroundingsScreen(
                     append(". ")
                     append(state.analysis.description)
                     if (state.analysis.obstacles.isNotEmpty()) {
-                        append(". Warning: Obstacles detected: ")
+                        append(". ")
                         append(state.analysis.obstacles.joinToString(", "))
                     }
                 }
@@ -232,27 +231,14 @@ fun SurroundingsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_surroundings), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_surroundings),
+                subtitle = stringResource(R.string.surroundings_subtitle),
+                onBack = {
+                    tts.stop()
+                    onBack()
                 },
-                actions = {
-                    TextButton(onClick = onNavigateHazard) {
-                        Text("🚨 Hazard", color = Emergency, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                backContentDescription = stringResource(R.string.common_back)
             )
         },
         containerColor = BgPrimary
@@ -316,10 +302,11 @@ fun SurroundingsScreen(
                                     CircularProgressIndicator(color = Accent)
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = "Analyzing surroundings…",
+                                        text = stringResource(R.string.surroundings_processing_speech),
                                         color = TextPrimary,
                                         fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }

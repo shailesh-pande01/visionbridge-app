@@ -109,11 +109,17 @@ fun SmartReadingScreen(
     val scope = rememberCoroutineScope()
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val sessionManager = remember { com.example.visionbridge.data.SessionManager.getInstance(context) }
+    val currentLanguage by sessionManager.language.collectAsStateWithLifecycle()
 
     // ── Text-to-speech ────────────────────────────────────────────────
     var ttsWarning by remember { mutableStateOf<String?>(null) }
     val tts = remember { TextToSpeechManager(context) { message -> ttsWarning = message } }
     val isSpeaking by tts.isSpeaking.collectAsStateWithLifecycle()
+
+    LaunchedEffect(currentLanguage) {
+        tts.setLanguage(currentLanguage)
+    }
 
     // ── Camera permission ─────────────────────────────────────────────
     var hasPermission by remember {
@@ -239,7 +245,7 @@ fun SmartReadingScreen(
                                 technicalDetail = "Empty JPEG buffer from ImageProxy"
                             )
                         } else {
-                            viewModel.onImageCaptured(bytes, rotation)
+                            viewModel.onImageCaptured(bytes, rotation, currentLanguage)
                         }
                     }
                 }
@@ -272,9 +278,10 @@ fun SmartReadingScreen(
     }
 
     // ── Speak each outcome exactly once ───────────────────────────────
+    val processingSpeech = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_processing_speech)
     LaunchedEffect(uiState) {
         if (uiState is ReadingUiState.Processing) {
-            tts.speak("Reading text. Please wait.")
+            tts.speak(processingSpeech)
         } else if (uiState is ReadingUiState.Result) {
             val res = uiState as ReadingUiState.Result
             ContextMemoryManager.setContext("reading", "text you captured", res.text)
@@ -287,26 +294,14 @@ fun SmartReadingScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(title, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            onBack()
-                        },
-                        modifier = Modifier.semantics {
-                            contentDescription = "Back to home"
-                        }
-                    ) {
-                        Text("Back", color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.feature_reading),
+                subtitle = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_subtitle),
+                onBack = {
+                    tts.stop()
+                    onBack()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary,
-                    navigationIconContentColor = TextPrimary
-                )
+                backContentDescription = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.common_home)
             )
         },
         containerColor = BgPrimary
@@ -445,7 +440,7 @@ private fun AimingHint() {
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(
-                text = "Point the camera at a sign, label, menu, or document",
+                text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_hint),
                 color = TextPrimary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
@@ -470,7 +465,7 @@ private fun ProcessingPanel() {
         CircularProgressIndicator(color = Accent)
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Reading text from your photo…",
+            text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_processing_speech),
             color = TextPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
@@ -478,7 +473,7 @@ private fun ProcessingPanel() {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Extracting words from signs, labels, menus, or documents.",
+            text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_hint),
             color = TextMuted,
             fontSize = 17.sp,
             textAlign = TextAlign.Center
@@ -506,7 +501,7 @@ private fun ResultPanel(state: ReadingUiState.Result, isSpeaking: Boolean) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Extracted Text",
+                text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_extracted_text),
                 color = Accent,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -522,7 +517,7 @@ private fun ResultPanel(state: ReadingUiState.Result, isSpeaking: Boolean) {
         if (isSpeaking) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "🔊 Reading aloud…",
+                text = "🔊 ${androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.voice_status_speaking)}",
                 color = Accent,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium
@@ -595,8 +590,6 @@ private fun MessagePanel(
             textAlign = TextAlign.Center
         )
 
-        // The real cause, shown rather than hidden — a generic "network error" is
-        // impossible to debug from a phone in the field.
         technicalDetail?.let { detail ->
             Spacer(modifier = Modifier.height(24.dp))
             Surface(
@@ -641,7 +634,7 @@ private fun CameraPermissionPanel(
         Text(text = "📷", fontSize = 56.sp)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Camera access is needed",
+            text = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.camera_permission_required),
             color = Accent,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
@@ -671,7 +664,7 @@ private fun CameraPermissionPanel(
             colors = ButtonDefaults.buttonColors(containerColor = Accent)
         ) {
             Text(
-                text = if (permanentlyDenied) "Open Settings" else "Allow Camera",
+                text = if (permanentlyDenied) "Open Settings" else androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.camera_permission_grant),
                 fontSize = 20.sp,
                 color = BgPrimary,
                 fontWeight = FontWeight.Bold
@@ -682,6 +675,7 @@ private fun CameraPermissionPanel(
 
 @Composable
 private fun CaptureControls(onCapture: () -> Unit) {
+    val tapToCaptureText = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.camera_tap_to_capture)
     Box(
         modifier = Modifier
             .size(112.dp)
@@ -689,7 +683,7 @@ private fun CaptureControls(onCapture: () -> Unit) {
             .background(Accent)
             .clickable(onClick = onCapture)
             .semantics {
-                contentDescription = "Capture. Takes a photo and reads the text aloud."
+                contentDescription = tapToCaptureText
             },
         contentAlignment = Alignment.Center
     ) {
@@ -710,7 +704,7 @@ private fun CaptureControls(onCapture: () -> Unit) {
     }
     Spacer(modifier = Modifier.height(16.dp))
     Text(
-        text = "Tap to Capture",
+        text = tapToCaptureText,
         color = TextPrimary,
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold
@@ -725,8 +719,8 @@ private fun ResultControls(
     onCaptureAgain: () -> Unit
 ) {
     PrimaryActionButton(
-        label = "Capture Again",
-        description = "Capture again. Reopens the camera.",
+        label = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_btn_capture_again),
+        description = androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_talkback_capture_again),
         onClick = onCaptureAgain
     )
     Spacer(modifier = Modifier.height(14.dp))
@@ -739,14 +733,18 @@ private fun ResultControls(
             modifier = Modifier
                 .weight(1f)
                 .heightIn(min = 64.dp)
-                .semantics { contentDescription = "Read again. Repeats the text aloud." },
+                .semantics { contentDescription = "Read again" },
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = BgPrimary,
                 contentColor = TextPrimary
             )
         ) {
-            Text("🔊 Read Again", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(
+                androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_btn_read_again),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
         Button(
             onClick = onStop,
@@ -754,7 +752,7 @@ private fun ResultControls(
             modifier = Modifier
                 .weight(1f)
                 .heightIn(min = 64.dp)
-                .semantics { contentDescription = "Stop reading aloud." },
+                .semantics { contentDescription = "Stop reading" },
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = BgSecondary,
@@ -763,7 +761,11 @@ private fun ResultControls(
                 disabledContentColor = TextMuted
             )
         ) {
-            Text("⏹ Stop", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(
+                androidx.compose.ui.res.stringResource(com.example.visionbridge.R.string.reading_btn_stop),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

@@ -19,7 +19,8 @@ class SmartReadingRepository(
 
     suspend fun extractText(
         imageBytes: ByteArray,
-        rotationDegrees: Int
+        rotationDegrees: Int,
+        language: String = "en"
     ): ApiResult<ReadingExtraction> {
 
         val optimized = try {
@@ -48,11 +49,11 @@ class SmartReadingRepository(
 
         Log.i(
             TAG,
-            "Sending ${optimized.width}x${optimized.height} ${optimized.mimeType} (~${optimized.sizeKb} KB)"
+            "Sending ${optimized.width}x${optimized.height} ${optimized.mimeType} (~${optimized.sizeKb} KB) in lang=$language"
         )
 
         return withContext(Dispatchers.IO) {
-            api.extractText(optimized.base64, optimized.mimeType)
+            api.extractText(optimized.base64, optimized.mimeType, language)
         }
     }
 

@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.visionbridge.R
 import com.example.visionbridge.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,12 +35,14 @@ fun ProgressScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
+    val backNavDesc = stringResource(R.string.common_back)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "⭐ My Progress",
+                        text = stringResource(R.string.progress_title),
                         fontWeight = FontWeight.Bold,
                         color = Accent,
                         fontSize = 22.sp
@@ -47,7 +51,7 @@ fun ProgressScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
-                        modifier = Modifier.semantics { contentDescription = "Go back to Entertainment Hub" }
+                        modifier = Modifier.semantics { contentDescription = backNavDesc }
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -98,7 +102,7 @@ fun ProgressScreen(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Total XP", color = TextMuted, fontSize = 12.sp)
+                        Text(text = stringResource(R.string.progress_total_xp), color = TextMuted, fontSize = 12.sp)
                     }
                 }
 
@@ -123,7 +127,7 @@ fun ProgressScreen(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Day Streak", color = TextMuted, fontSize = 12.sp)
+                        Text(text = stringResource(R.string.progress_day_streak), color = TextMuted, fontSize = 12.sp)
                     }
                 }
 
@@ -148,7 +152,7 @@ fun ProgressScreen(
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(text = "Correct", color = TextMuted, fontSize = 12.sp)
+                        Text(text = stringResource(R.string.progress_correct), color = TextMuted, fontSize = 12.sp)
                     }
                 }
             }
@@ -167,14 +171,14 @@ fun ProgressScreen(
             ) {
                 Icon(imageVector = Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, tint = Accent)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Hear My Progress", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(stringResource(R.string.progress_btn_hear_stats), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Achievements Section
             Text(
-                text = "🏆 Achievements",
+                text = stringResource(R.string.progress_achievements_header),
                 style = MaterialTheme.typography.titleMedium,
                 color = TextMuted,
                 fontWeight = FontWeight.Bold,

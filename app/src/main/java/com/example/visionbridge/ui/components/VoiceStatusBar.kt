@@ -30,6 +30,9 @@ import com.example.visionbridge.ui.theme.*
 import com.example.visionbridge.voice.VoiceState
 import com.example.visionbridge.voice.VoiceStatus
 
+import androidx.compose.ui.res.stringResource
+import com.example.visionbridge.R
+
 /**
  * Global accessible status bar displaying the state of the voice engine.
  * Visible across low-vision user screens to provide high-contrast visual and TalkBack feedback.
@@ -41,18 +44,34 @@ fun VoiceStatusBar(
     onStop: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val (statusTitle, iconText, isPulse) = when (voiceState.status) {
-        VoiceStatus.IDLE -> Triple("Voice Ready", "🎙️", false)
-        VoiceStatus.LISTENING -> Triple("Listening for \"Vision\"", "🎙️", true)
-        VoiceStatus.AWAITING_COMMAND -> Triple("Listening for command…", "✨", true)
-        VoiceStatus.PROCESSING -> Triple("Processing command…", "⏳", false)
-        VoiceStatus.NAVIGATING -> Triple("Opening feature…", "➡️", false)
-        VoiceStatus.SPEAKING -> Triple("Speaking…", "🔊", false)
-        VoiceStatus.PAUSED -> Triple("Voice Paused", "⏸️", false)
-        VoiceStatus.BLOCKED -> Triple("Microphone Blocked", "🚫", false)
-        VoiceStatus.UNSUPPORTED -> Triple("Voice Unsupported", "⚠️", false)
-        VoiceStatus.ERROR -> Triple("Voice Error", "⚠️", false)
+    val statusTitle = when (voiceState.status) {
+        VoiceStatus.IDLE -> stringResource(R.string.voice_status_ready)
+        VoiceStatus.LISTENING -> stringResource(R.string.voice_status_listening_for_vision)
+        VoiceStatus.AWAITING_COMMAND -> stringResource(R.string.voice_status_listening_for_command)
+        VoiceStatus.PROCESSING -> stringResource(R.string.voice_status_processing_command)
+        VoiceStatus.NAVIGATING -> stringResource(R.string.voice_status_opening_feature)
+        VoiceStatus.SPEAKING -> stringResource(R.string.voice_status_speaking)
+        VoiceStatus.PAUSED -> stringResource(R.string.voice_status_paused)
+        VoiceStatus.BLOCKED -> stringResource(R.string.voice_status_blocked)
+        VoiceStatus.UNSUPPORTED -> stringResource(R.string.voice_status_unsupported)
+        VoiceStatus.ERROR -> stringResource(R.string.voice_status_error)
     }
+
+    val iconText = when (voiceState.status) {
+        VoiceStatus.IDLE -> "🎙️"
+        VoiceStatus.LISTENING -> "🎙️"
+        VoiceStatus.AWAITING_COMMAND -> "✨"
+        VoiceStatus.PROCESSING -> "⏳"
+        VoiceStatus.NAVIGATING -> "➡️"
+        VoiceStatus.SPEAKING -> "🔊"
+        VoiceStatus.PAUSED -> "⏸️"
+        VoiceStatus.BLOCKED -> "🚫"
+        VoiceStatus.UNSUPPORTED -> "⚠️"
+        VoiceStatus.ERROR -> "⚠️"
+    }
+
+    val isPulse = voiceState.status == VoiceStatus.LISTENING ||
+            voiceState.status == VoiceStatus.AWAITING_COMMAND
 
     val isListening = voiceState.status == VoiceStatus.LISTENING ||
             voiceState.status == VoiceStatus.AWAITING_COMMAND
@@ -118,7 +137,7 @@ fun VoiceStatusBar(
 
                         if (voiceState.status == VoiceStatus.LISTENING) {
                             Text(
-                                text = "Say \"Vision, ...\" to speak",
+                                text = stringResource(R.string.voice_status_say_vision_to_speak),
                                 color = TextMuted,
                                 fontSize = 13.sp
                             )
@@ -134,7 +153,12 @@ fun VoiceStatusBar(
                         onClick = onStop,
                         modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        Text("Stop", color = TextMuted, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = stringResource(R.string.common_stop),
+                            color = TextMuted,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

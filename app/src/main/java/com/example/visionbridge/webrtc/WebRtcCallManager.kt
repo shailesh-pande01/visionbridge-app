@@ -411,7 +411,13 @@ class WebRtcCallManager(
             // Restore normal audio routing
             setSpeakerphoneEnabled(false)
 
+            audioDeviceModule?.release()
             audioDeviceModule = null
+
+            peerConnectionFactory?.dispose()
+            peerConnectionFactory = null
+            
+            eglBase.release()
 
             Log.i(TAG, "WebRtcCallManager cleanup complete")
         } catch (e: Exception) {

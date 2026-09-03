@@ -15,6 +15,28 @@
     <string name="common_delete">Delete</string>
     <string name="common_submit">Submit</string>
     <string name="common_confirm">Confirm</string>
+    <string name="common_add">Add</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_refresh">Refresh</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_resume">Resume</string>
+    <string name="common_selected">Selected</string>
+    <string name="common_not_selected">Not selected</string>
+    <string name="common_show">Show</string>
+    <string name="common_hide">Hide</string>
+    <string name="common_username_or_email">Username or Email</string>
+    <string name="common_accessibility_hub">Accessibility Hub</string>
+    <string name="action_card_tap_to_open">%1$s. %2$s. Tap to open.</string>
+
+    <!-- Badges -->
+    <string name="action_badge_realtime">Realtime</string>
+    <string name="action_badge_audio_call">Audio Call</string>
+    <string name="action_badge_live_volunteer">Live Volunteer</string>
+    <string name="action_badge_radio_games">Radio &amp; Games</string>
+    <string name="action_badge_live_stream">Live Stream</string>
+    <string name="action_badge_audiobooks">Audiobooks</string>
+    <string name="action_badge_xp_25">+25 XP</string>
 
     <!-- Auth -->
     <string name="auth_login_title">Login to VisionBridge</string>
@@ -33,6 +55,19 @@
     <string name="auth_role_volunteer">Volunteer</string>
     <string name="auth_role_volunteer_desc">Help low-vision users by accepting real-time assistance video calls.</string>
     <string name="auth_logout">Logout</string>
+    <string name="auth_email">Email (Optional)</string>
+    <string name="auth_session_expired">Your session has expired. Please sign in again.</string>
+    <string name="auth_err_both_fields">Please enter your username/email and password.</string>
+    <string name="auth_err_all_fields">Please fill in all required fields.</string>
+    <string name="auth_err_password_len">Password must be at least 6 characters long.</string>
+    <string name="auth_err_password_match">Passwords do not match.</string>
+    <string name="auth_err_email_invalid">Please enter a valid email address or leave it blank.</string>
+    <string name="splash_loading">Checking session…</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_sign_out_title">Sign Out?</string>
+    <string name="dialog_sign_out_message">Are you sure you want to sign out of VisionBridge? You will need your password to log back in.</string>
+    <string name="dialog_sign_out_talkback">Sign out of VisionBridge</string>
 
     <!-- Language -->
     <string name="language_label">Language</string>
@@ -44,38 +79,114 @@
     <string name="home_title">VisionBridge</string>
     <string name="home_quick_actions">Quick Actions</string>
     <string name="home_support_emergency">Support &amp; Emergency</string>
+    <string name="home_section_ai_assistance">AI Assistance</string>
+    <string name="home_section_human_assistance">Human Assistance &amp; Safety</string>
+    <string name="home_section_everyday">Everyday Companion</string>
+    <string name="home_section_utilities">Location &amp; Utilities</string>
     <string name="voice_tap_to_speak">Tap to speak or hold</string>
     <string name="voice_listening">Listening — say “Vision”</string>
     <string name="voice_processing">Understanding…</string>
     <string name="voice_hint">Say “Vision”, then ask for any feature.</string>
 
+    <!-- Voice Status -->
+    <string name="voice_status_ready">Voice Ready</string>
+    <string name="voice_status_listening_for_vision">Listening for “Vision”</string>
+    <string name="voice_status_listening_for_command">Listening for command…</string>
+    <string name="voice_status_processing_command">Processing command…</string>
+    <string name="voice_status_opening_feature">Opening feature…</string>
+    <string name="voice_status_speaking">Speaking…</string>
+    <string name="voice_status_paused">Voice assistant paused</string>
+    <string name="voice_status_blocked">Microphone permission required</string>
+    <string name="voice_status_unsupported">Voice not supported</string>
+    <string name="voice_status_error">Couldn\'t understand</string>
+    <string name="voice_status_say_vision_to_speak">Say “Vision, ...” to speak</string>
+    <string name="voice_status_tap_or_say_vision">Tap or say “Vision”</string>
+    <string name="voice_status_description">Voice Assistant Area. Current state: %1$s. Tap to interact.</string>
+
     <!-- Feature Names & Subtitles -->
     <string name="feature_reading">Read Text</string>
     <string name="feature_reading_sub">Point camera at menus, signs, labels</string>
+    <string name="reading_subtitle">Text Extraction &amp; Read Aloud</string>
+    <string name="reading_processing_speech">Reading text. Please wait.</string>
+    <string name="reading_btn_read_again">🔊 Read Again</string>
+    <string name="reading_btn_stop">⏹ Stop</string>
+    <string name="reading_btn_capture_again">Capture Again</string>
+    <string name="reading_talkback_read_again">Read again. Repeats the text aloud.</string>
+    <string name="reading_talkback_stop">Stop reading aloud.</string>
+    <string name="reading_talkback_capture_again">Capture again. Reopens the camera.</string>
 
     <string name="feature_surroundings">Describe Surroundings</string>
     <string name="feature_surroundings_sub">Describe what is in front of you</string>
-
-    <string name="feature_hazard">Hazard Mode</string>
-    <string name="feature_hazard_sub">Continuous background obstacle detection</string>
+    <string name="surroundings_subtitle">Scene &amp; Obstacle Analyzer</string>
+    <string name="surroundings_processing_speech">Analyzing your surroundings. Please wait.</string>
 
     <string name="feature_currency">Currency Reader</string>
     <string name="feature_currency_sub">Identify notes, coins, and total amount</string>
+    <string name="currency_subtitle">Note &amp; Coin Identifier</string>
+    <string name="currency_processing_speech">Analyzing currency. Please wait.</string>
 
     <string name="feature_transport">Public Transport</string>
     <string name="feature_transport_sub">Identify buses, trains, platforms, signs</string>
+    <string name="transport_subtitle">Bus, Metro &amp; Platform Guidance</string>
+    <string name="transport_processing_speech">Scanning for transport information. Please wait.</string>
 
     <string name="feature_finder">Smart Object Finder</string>
     <string name="feature_finder_sub">Locate your wallet, keys, bottles, etc.</string>
+    <string name="finder_subtitle">Smart Object Locator</string>
+    <string name="finder_target_subtitle">Target: %1$s</string>
+    <string name="finder_prompt_speech">What object are you looking for? Tap the microphone or type below.</string>
+    <string name="finder_looking_speech">Looking for %1$s…</string>
+    <string name="finder_change_target">Change Target</string>
+    <string name="finder_tap_to_speak">Tap to Speak Object</string>
+    <string name="finder_listening">Listening…</string>
+    <string name="finder_or_type">— OR TYPE —</string>
+    <string name="finder_object_name_label">Object Name</string>
+    <string name="finder_start_search">Start Searching</string>
+    <string name="finder_scan_to_find">Scan to find %1$s</string>
+    <string name="finder_status_found">✅ FOUND: %1$s</string>
+    <string name="finder_status_not_found">❌ NOT FOUND: %1$s</string>
+    <string name="finder_volunteer_prompt">Can\'t locate your %1$s? A volunteer can help you search in real time.</string>
 
     <string name="feature_location">Where Am I?</string>
     <string name="feature_location_sub">Get your current street and nearby places</string>
+    <string name="location_subtitle">Live Location &amp; Nearby Places</string>
+    <string name="location_finding_speech">Finding your current location. Please wait.</string>
+    <string name="location_copy_btn">📋 Copy Location</string>
+    <string name="location_share_btn">↗ Share via WhatsApp</string>
+    <string name="location_copied_toast">Location copied to clipboard</string>
 
     <string name="feature_volunteer">Volunteer Help</string>
     <string name="feature_volunteer_sub">Connect with a sighted volunteer</string>
+    <string name="volunteer_help_subtitle">Live Sighted Volunteer Support</string>
+    <string name="volunteer_help_searching_speech">Help request sent. Searching for an available volunteer.</string>
+    <string name="volunteer_help_accepted_speech">%1$s has accepted your request. Connecting call...</string>
+    <string name="volunteer_help_connecting_speech">Connecting to volunteer...</string>
+    <string name="volunteer_accepted_title">%1$s Accepted!</string>
+    <string name="volunteer_connecting_desc">Establishing live video call connection...</string>
+    <string name="volunteer_call_badge">LIVE ASSISTANCE CALL</string>
+    <string name="volunteer_connected_title">Connected with Volunteer</string>
+    <string name="volunteer_connected_instruction">The volunteer can see your back camera feed and hear your microphone. Talk normally to describe what you need.</string>
+    <string name="volunteer_btn_mute">🎙️ Mute</string>
+    <string name="volunteer_btn_unmute">🔇 Unmute</string>
+    <string name="volunteer_preview_debug">Local Camera Preview:</string>
+    <string name="volunteer_dashboard_subtitle">Sighted Assistance Portal</string>
+    <string name="volunteer_welcome">Welcome, %1$s!</string>
+    <string name="volunteer_ready_desc">Ready to assist low-vision users.</string>
+    <string name="volunteer_assisting_user">Assisting: %1$s</string>
+    <string name="volunteer_low_vision_user">Low-Vision User</string>
 
     <string name="feature_sos">Emergency SOS</string>
     <string name="feature_sos_sub">Send immediate distress alert &amp; GPS</string>
+    <string name="sos_subtitle">Immediate Distress Alert &amp; GPS</string>
+    <string name="sos_contacts_subtitle">Trusted Emergency Numbers</string>
+    <string name="sos_speech_countdown">Emergency SOS triggered. Sending alert in 5 seconds. Tap cancel to stop.</string>
+    <string name="sos_speech_sending">Sending emergency distress alerts with your live location.</string>
+    <string name="sos_speech_active">Emergency SOS is active. Your contacts have been notified on WhatsApp.</string>
+    <string name="sos_speech_cancelled">Emergency SOS cancelled.</string>
+    <string name="sos_dispatching">Dispatching Emergency WhatsApp Alert…</string>
+    <string name="sos_inactive">Emergency mode inactive.</string>
+    <string name="sos_add_contact_dialog_title">Add New Contact</string>
+    <string name="sos_add_contact_btn">➕ Add</string>
 
     <string name="feature_entertainment">Entertainment Hub</string>
     <string name="feature_entertainment_sub">Live Radio, Stories, Audio Games &amp; Daily Streak</string>
@@ -83,6 +194,80 @@
     <string name="feature_stories">Stories &amp; Audiobooks</string>
     <string name="feature_games">Audio Games</string>
     <string name="feature_progress">My Progress</string>
+
+    <string name="entertainment_title">🎧 Entertainment Hub</string>
+    <string name="entertainment_subtitle">Audiobooks, Radio &amp; Games</string>
+    <string name="entertainment_voice_banner_title">Voice-First Entertainment</string>
+    <string name="entertainment_voice_banner_desc">Say “Vision, play local radio” or “Vision, start daily challenge”.</string>
+    <string name="entertainment_voice_banner_talkback">You can say: Vision, play local radio. Vision, open stories. Vision, start today\'s challenge.</string>
+    <string name="entertainment_continue_listening">CONTINUE LISTENING</string>
+    <string name="entertainment_btn_resume">▶ Resume</string>
+    <string name="entertainment_resume_talkback">Resume listening to %1$s. Tap to open.</string>
+    <string name="entertainment_channels_header">Entertainment Channels</string>
+    <string name="entertainment_card_radio_title">Live Radio</string>
+    <string name="entertainment_card_radio_sub">Tune in to live local &amp; regional radio stations</string>
+    <string name="entertainment_card_stories_title">Stories &amp; Audiobooks</string>
+    <string name="entertainment_card_stories_sub">Classics and folk tales in English, Hindi &amp; Marathi</string>
+    <string name="entertainment_card_games_title">Games &amp; Daily Challenge</string>
+    <string name="entertainment_card_games_sub">Trivia, Riddles, 20 Questions &amp; Daily Streak</string>
+    <string name="entertainment_card_progress_title">My Progress &amp; Streak</string>
+    <string name="entertainment_card_progress_sub">Track your XP, daily streak &amp; unlocked achievements</string>
+
+    <string name="radio_title">Live Radio</string>
+    <string name="radio_now_playing">Now Playing</string>
+    <string name="radio_status_playing">Live • Playing</string>
+    <string name="radio_btn_stop">Stop Radio</string>
+    <string name="radio_filters_header">Browse Stations</string>
+    <string name="radio_btn_browse">Browse Stations</string>
+    <string name="radio_no_stations">No radio stations found for this category.</string>
+    <string name="radio_filter_local">📍 Local / Nearby</string>
+    <string name="radio_filter_marathi">🚩 Marathi</string>
+    <string name="radio_filter_hindi">📻 Hindi</string>
+    <string name="radio_filter_english">🌐 English</string>
+
+    <string name="story_title_library">Stories &amp; Audiobooks</string>
+    <string name="story_title_player">Now Playing</string>
+    <string name="story_back_to_library">Back to Library</string>
+    <string name="story_filter_language">Language</string>
+    <string name="story_filter_genre">Genre</string>
+    <string name="story_library_header">Story Library</string>
+    <string name="story_no_stories">No stories available for this filter.</string>
+    <string name="story_btn_chapters">Chapters</string>
+    <string name="story_btn_hide_text">Hide Text</string>
+    <string name="story_btn_read_text">Read Text</string>
+    <string name="story_lang_all">🌐 All</string>
+    <string name="story_lang_en">🇬🇧 English</string>
+    <string name="story_lang_hi">🇮🇳 हिंदी</string>
+    <string name="story_lang_mr">🇮🇳 मराठी</string>
+    <string name="story_genre_all">📚 All Stories</string>
+    <string name="story_genre_popular">⭐ Popular</string>
+    <string name="story_genre_mystery">🕵️ Mystery</string>
+    <string name="story_genre_adventure">🗺️ Adventure</string>
+    <string name="story_genre_fantasy">✨ Fantasy</string>
+    <string name="story_genre_horror">👻 Horror</string>
+    <string name="story_genre_classics">📖 Classics</string>
+    <string name="story_genre_comedy">😂 Folklore</string>
+
+    <string name="games_title">Audio Games &amp; Daily</string>
+    <string name="games_btn_hear_again">Hear Question Again</string>
+    <string name="games_btn_need_clue">Need a Clue?</string>
+    <string name="games_your_answer_header">Your Answer</string>
+    <string name="games_placeholder_answer">Type or speak your answer…</string>
+    <string name="games_btn_submit">Submit Answer</string>
+    <string name="games_btn_speak_answer">🎙️ Speak Answer</string>
+    <string name="games_btn_new_round">🔄 Next Round</string>
+    <string name="games_mode_daily">🏆 Daily Challenge</string>
+    <string name="games_mode_trivia">❓ Trivia</string>
+    <string name="games_mode_riddles">🧩 Riddles</string>
+    <string name="games_mode_twenty_questions">💭 20 Questions</string>
+    <string name="games_mode_memory">🧠 Memory Game</string>
+
+    <string name="progress_title">⭐ My Progress</string>
+    <string name="progress_total_xp">Total XP</string>
+    <string name="progress_day_streak">Day Streak</string>
+    <string name="progress_correct">Correct</string>
+    <string name="progress_btn_hear_stats">Hear My Progress</string>
+    <string name="progress_achievements_header">🏆 Achievements</string>
 
     <!-- Camera / General Actions -->
     <string name="camera_tap_to_capture">Tap to Capture</string>
@@ -99,14 +284,10 @@
     <string name="reading_no_text">No readable text found in this image.</string>
     <string name="reading_hint">Point camera at a sign, label, menu, or document</string>
 
-    <!-- Surroundings & Hazard -->
+    <!-- Surroundings -->
     <string name="surroundings_scene">Scene Detected</string>
     <string name="surroundings_obstacles">Obstacles</string>
     <string name="surroundings_objects">Objects</string>
-    <string name="hazard_active">🚨 Hazard Scanning Live</string>
-    <string name="hazard_start">Start Hazard Mode</string>
-    <string name="hazard_stop">Stop Hazard Mode</string>
-    <string name="hazard_no_change">Path clear. No significant change.</string>
 
     <!-- Currency -->
     <string name="currency_total">Total: %1$s</string>
@@ -241,6 +422,155 @@
     <string name="voice_call_prompt_news">What\'s in the news today?</string>
     <string name="voice_call_prompt_tech">Explain quantum computing simply.</string>
     <string name="voice_call_prompt_capital">What is the capital of Australia?</string>
+    <string name="camera_flip">Flip Camera</string>
+    <string name="voice_call_quick_topics">Quick Topics</string>
     <string name="voice_call_prompt_day">Help me plan my day.</string>
     <string name="voice_call_prompt_fact">Tell me a fun technology fact.</string>
+
+    <!-- Calling Assistant -->
+    <string name="feature_calling_title">Phone Assistant</string>
+    <string name="feature_calling_sub">Voice-first calling &amp; private contacts</string>
+    <string name="calling_subtitle">Voice Dialer &amp; Speed Dial</string>
+    <string name="calling_voice_hint">Say “Vision, call Mom” or “Vision, call 9876543210”</string>
+    <string name="calling_tab_contacts">Contacts (%1$d)</string>
+    <string name="calling_tab_recent">Recent Calls</string>
+    <string name="calling_no_recent">No recent calls.</string>
+    <string name="calling_btn_call">📞 Call</string>
+    <string name="calling_add_contact">Add New Contact</string>
+    <string name="calling_field_name">Name</string>
+    <string name="calling_field_phone">Phone Number</string>
+    <string name="calling_field_relation">Relationship (e.g. Mother, Doctor)</string>
+
+    <!-- Daily News Assistant -->
+    <string name="feature_news_title">Daily News</string>
+    <string name="feature_news_sub">Accessible voice-first local &amp; national briefing</string>
+    <string name="news_subtitle">AI Daily Audio Digest</string>
+    <string name="news_voice_hint">Say “Vision, tell me the news”</string>
+    <string name="news_btn_refresh">🔄 Refresh</string>
+    <string name="news_cat_general">Top Stories</string>
+    <string name="news_cat_tech">Technology</string>
+    <string name="news_cat_business">Business</string>
+    <string name="news_cat_science">Science</string>
+    <string name="news_cat_sports">Sports</string>
+    <string name="news_cat_entertainment">Entertainment</string>
+    <string name="news_story_counter">Story %1$d of %2$d</string>
+    <string name="news_briefing_header">Daily News Briefing</string>
+    <string name="news_loading_stories">Loading stories…</string>
+    <string name="news_err_could_not_load">Could not load news briefing.</string>
+    <string name="news_btn_play">▶️ Play</string>
+    <string name="news_btn_pause">⏸️ Pause</string>
+
+    <!-- Gesture-Based Interaction -->
+    <string name="gesture_listening_prompt">Listening.</string>
+    <string name="gesture_home_hint">Tip: Double-tap with two fingers anytime to speak directly without saying “Vision”.</string>
+    <string name="gesture_home_hint_talkback">Voice activation shortcut: Double-tap with two fingers anywhere on screen to start a voice command directly.</string>
+    <string name="gesture_settings_title">Gesture Controls</string>
+    <string name="gesture_setting_touch">Two-Finger Double Tap</string>
+    <string name="gesture_setting_touch_desc">Double-tap with two fingers anywhere on screen to speak a command directly</string>
+    <string name="gesture_setting_shake">Shake to Listen</string>
+    <string name="gesture_setting_shake_desc">Gently shake your device to start voice recognition</string>
+    <string name="gesture_setting_haptics">Haptic Feedback</string>
+    <string name="gesture_setting_haptics_desc">Vibrate briefly when an activation gesture is recognized</string>
+
+    <!-- Admin Dashboard -->
+    <string name="admin_title">Admin</string>
+    <string name="admin_dashboard_title">Admin Dashboard</string>
+    <string name="admin_dashboard_badge">CONSOLE</string>
+    <string name="admin_login_link">Admin Login</string>
+    <string name="admin_login_title">Administrator Login</string>
+    <string name="admin_login_subtitle">Restricted area — VisionBridge operations only.</string>
+    <string name="admin_login_button">Login as Admin</string>
+    <string name="admin_back_to_main_login">← Back to main login</string>
+    <string name="admin_login_err_not_admin">This account does not have administrator access.</string>
+    <string name="admin_login_err_generic">Unable to sign in. Please try again.</string>
+    <string name="admin_err_access_denied">You do not have permission to view this data.</string>
+    <string name="admin_err_fetch_failed">Could not load admin data. Please pull to retry.</string>
+    <string name="admin_no_results">No records found.</string>
+
+    <!-- Admin Navigation Sections -->
+    <string name="admin_nav_overview">Overview</string>
+    <string name="admin_nav_users">Users</string>
+    <string name="admin_nav_volunteers">Volunteers</string>
+    <string name="admin_nav_call_logs">Call Logs</string>
+    <string name="admin_nav_emergency">Emergency SOS</string>
+    <string name="admin_nav_profile">Profile</string>
+
+    <!-- Admin Section Subtitles -->
+    <string name="admin_sub_overview">A live summary of the VisionBridge community.</string>
+    <string name="admin_sub_users">Registered low-vision users and details.</string>
+    <string name="admin_sub_volunteers">Registered volunteers and their live availability.</string>
+    <string name="admin_sub_call_logs">Every volunteer call session — participants, duration, and status.</string>
+    <string name="admin_sub_emergency">Real-time emergency events and WhatsApp alerts.</string>
+    <string name="admin_sub_profile">Your administrator credentials and security.</string>
+
+    <!-- Admin Overview Stats -->
+    <string name="admin_stat_total_users">Total Users</string>
+    <string name="admin_stat_total_volunteers">Total Volunteers</string>
+    <string name="admin_stat_active_volunteers">Active Volunteers</string>
+    <string name="admin_stat_total_requests">Total Help Requests</string>
+    <string name="admin_stat_active_calls">Active Calls</string>
+    <string name="admin_stat_completed_calls">Completed Calls</string>
+    <string name="admin_stat_active_sos">Active SOS Alerts</string>
+    <string name="admin_quick_actions_title">Quick Actions</string>
+    <string name="admin_realtime_badge">LIVE REALTIME</string>
+
+    <!-- Admin Users Management -->
+    <string name="admin_users_search_placeholder">Search by name or username…</string>
+    <string name="admin_users_col_name">Name</string>
+    <string name="admin_users_col_username">Username</string>
+    <string name="admin_users_col_emergency_contact">Emergency WhatsApp</string>
+    <string name="admin_users_col_registered">Registered</string>
+    <string name="admin_users_col_role">Role</string>
+
+    <!-- Admin Volunteers Management -->
+    <string name="admin_volunteers_search_placeholder">Search volunteers…</string>
+    <string name="admin_volunteers_availability">Availability</string>
+    <string name="admin_volunteers_available">Available</string>
+    <string name="admin_volunteers_unavailable">Unavailable</string>
+    <string name="admin_volunteers_accepted_requests">Accepted</string>
+    <string name="admin_volunteers_completed_requests">Completed</string>
+    <string name="admin_volunteers_filter_all">All</string>
+
+    <!-- Admin Call Logs -->
+    <string name="admin_call_logs_search_placeholder">Search by user or volunteer…</string>
+    <string name="admin_call_logs_user">User</string>
+    <string name="admin_call_logs_volunteer">Volunteer</string>
+    <string name="admin_call_logs_start">Call Start</string>
+    <string name="admin_call_logs_end">Call End</string>
+    <string name="admin_call_logs_duration">Duration</string>
+    <string name="admin_call_logs_status">Status</string>
+    <string name="admin_call_logs_from">From Date</string>
+    <string name="admin_call_logs_to">To Date</string>
+    <string name="admin_call_logs_sort_latest">Newest first</string>
+    <string name="admin_call_logs_sort_oldest">Oldest first</string>
+
+    <!-- Admin Status Badges -->
+    <string name="admin_status_active">Active</string>
+    <string name="admin_status_completed">Completed</string>
+    <string name="admin_status_cancelled">Cancelled</string>
+    <string name="admin_status_failed">Failed</string>
+    <string name="admin_status_pending">Pending</string>
+    <string name="admin_status_ended">Ended</string>
+
+    <!-- Admin Emergency SOS Monitoring -->
+    <string name="admin_sos_title">Emergency SOS Alerts</string>
+    <string name="admin_sos_active_count">%1$d active emergency alert(s)</string>
+    <string name="admin_sos_user">Requester</string>
+    <string name="admin_sos_location">GPS Location</string>
+    <string name="admin_sos_whatsapp_sent">WhatsApp Dispatched</string>
+    <string name="admin_sos_whatsapp_failed">WhatsApp Failed</string>
+    <string name="admin_sos_resolve_btn">Mark Resolved</string>
+    <string name="admin_sos_confirm_resolve">Are you sure you want to mark this emergency event as resolved?</string>
+
+    <!-- Admin Pagination -->
+    <string name="admin_pagination_prev">← Previous</string>
+    <string name="admin_pagination_next">Next →</string>
+    <string name="admin_pagination_page_of">Page %1$d of %2$d</string>
+
+    <!-- Admin Profile -->
+    <string name="admin_profile_role_title">Administrator</string>
+    <string name="admin_profile_badge">Super Admin</string>
+    <string name="admin_btn_sign_out">Sign Out Admin</string>
+    <string name="admin_home_banner_title">Administrator Console</string>
+    <string name="admin_home_banner_sub">Switch to Admin Dashboard to monitor community activity</string>
 </resources>

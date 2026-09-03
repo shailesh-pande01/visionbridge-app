@@ -101,14 +101,14 @@ fun LocationAssistantScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is LocationUiState.Loading -> {
-                tts.speak("Finding your location…")
+                tts.speak(context.getString(R.string.location_finding_speech))
             }
             is LocationUiState.Success -> {
                 ContextMemoryManager.setContext("location", "location information", state.analysis.summary)
                 val fullSpeech = buildString {
                     append(state.analysis.summary)
                     if (state.analysis.landmarks.isNotEmpty()) {
-                        append(". Nearby places include: ")
+                        append(". ")
                         append(state.analysis.landmarks.take(3).joinToString(", "))
                     }
                 }
@@ -122,22 +122,14 @@ fun LocationAssistantScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_location), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_location),
+                subtitle = stringResource(R.string.location_subtitle),
+                onBack = {
+                    tts.stop()
+                    onBack()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                backContentDescription = stringResource(R.string.common_back)
             )
         },
         containerColor = BgPrimary
@@ -215,14 +207,7 @@ fun LocationAssistantScreen(
                             ) {
                                 Column(modifier = Modifier.padding(18.dp)) {
                                     Text(
-                                        text = "STREET ADDRESS",
-                                        color = TextMuted,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = state.analysis.address,
+                                        text = stringResource(R.string.location_address, state.analysis.address),
                                         color = TextPrimary,
                                         fontSize = 18.sp,
                                         lineHeight = 24.sp
@@ -272,7 +257,7 @@ fun LocationAssistantScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Accent)
                         ) {
-                            Text("🔄 Refresh Location", fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
+                            Text("🔄 " + stringResource(R.string.common_refresh), fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))

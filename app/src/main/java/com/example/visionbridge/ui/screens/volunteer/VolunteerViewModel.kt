@@ -4,7 +4,6 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.visionbridge.api.ApiClient
 import com.example.visionbridge.api.ApiResult
 import com.example.visionbridge.api.VolunteerApi
 import com.example.visionbridge.data.HelpRequest
@@ -65,8 +64,12 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
         _callState.value = VolunteerCallState.LocatingAndBroadcasting
         viewModelScope.launch {
             val user = sessionManager.currentUser.value
-            val userId = user?.id ?: "anonymous-user"
-            val userName = user?.name ?: "User"
+            if (user == null || user.id.isBlank()) {
+                _callState.value = VolunteerCallState.Failed("You must be signed in to request volunteer assistance.")
+                return@launch
+            }
+            val userId = user.id
+            val userName = user.name.ifBlank { "User" }
 
             val (lat, lng) = LocationHelper.getCurrentLocation(getApplication())
 
@@ -111,13 +114,7 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
         signalingClient = signaling
 
         viewModelScope.launch {
-            val resolvedBaseUrl = withContext(Dispatchers.IO) {
-                when (val res = ApiClient.getInstance(getApplication()).getBaseUrl()) {
-                    is ApiResult.Success -> res.value
-                    is ApiResult.Failure -> null
-                }
-            }
-
+            val token = sessionManager.token
             signaling.connect(request.id, object : WebRtcSignalingClient.SignalingListener {
                 override fun onConnected() {
                     Log.i(TAG, "Socket.IO signaling connected to room ${request.id}")
@@ -206,7 +203,7 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
                 override fun onDisconnected() {
                     Log.w(TAG, "Signaling socket disconnected")
                 }
-            }, resolvedBaseUrl)
+            }, authToken = token)
 
             // Start camera and microphone tracks so peer connection is ready to answer
             manager.startCall(object : WebRtcCallManager.CallEvents {

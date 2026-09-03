@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.visionbridge.R
 import com.example.visionbridge.ui.theme.*
 import com.example.visionbridge.voice.ScreenActionRegistry
 import com.example.visionbridge.voice.VoiceManager
@@ -51,6 +53,8 @@ fun GamesScreen(
     val voiceManager = remember { VoiceManager.getInstance(context) }
     val scrollState = rememberScrollState()
 
+    val backNavDesc = stringResource(R.string.common_back)
+
     // Register screen actions for voice assistant
     DisposableEffect(Unit) {
         ScreenActionRegistry.registerScreen(
@@ -67,7 +71,7 @@ fun GamesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "🎮 Audio Games & Daily",
+                        text = stringResource(R.string.games_title),
                         fontWeight = FontWeight.Bold,
                         color = Accent,
                         fontSize = 20.sp
@@ -76,7 +80,7 @@ fun GamesScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
-                        modifier = Modifier.semantics { contentDescription = "Go back to Entertainment Hub" }
+                        modifier = Modifier.semantics { contentDescription = backNavDesc }
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -284,7 +288,7 @@ fun GamesScreen(
                         ) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.VolumeUp, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Hear Again", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(stringResource(R.string.games_btn_hear_again), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
 
                         if (uiState.selectedMode == "riddles") {
@@ -295,7 +299,7 @@ fun GamesScreen(
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f).height(44.dp)
                             ) {
-                                Text("💡 Need Clue", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(stringResource(R.string.games_btn_need_clue), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }
@@ -336,7 +340,7 @@ fun GamesScreen(
 
             // Answer Input Box
             Text(
-                text = "Your Answer",
+                text = stringResource(R.string.games_your_answer_header),
                 style = MaterialTheme.typography.titleMedium,
                 color = TextMuted,
                 fontWeight = FontWeight.Bold,
@@ -346,7 +350,7 @@ fun GamesScreen(
             OutlinedTextField(
                 value = uiState.userAnswerText,
                 onValueChange = { viewModel.setUserAnswerText(it) },
-                placeholder = { Text("Type your answer here…", color = TextMuted) },
+                placeholder = { Text(stringResource(R.string.games_placeholder_answer), color = TextMuted) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary,
@@ -374,7 +378,7 @@ fun GamesScreen(
                 if (uiState.isLoading) {
                     CircularProgressIndicator(color = BgPrimary, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Submit Answer", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(stringResource(R.string.games_btn_submit), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
 
@@ -393,7 +397,7 @@ fun GamesScreen(
                 ) {
                     Icon(imageVector = Icons.Default.Mic, contentDescription = null, tint = Accent)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Speak Answer", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.games_btn_speak_answer), fontWeight = FontWeight.Bold)
                 }
 
                 Button(
@@ -402,7 +406,7 @@ fun GamesScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f).height(48.dp)
                 ) {
-                    Text("New Round", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.games_btn_new_round), fontWeight = FontWeight.Bold)
                 }
             }
         }

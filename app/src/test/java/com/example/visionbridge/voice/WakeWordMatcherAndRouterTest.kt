@@ -155,11 +155,6 @@ class WakeWordMatcherAndRouterTest {
         assertEquals(VoiceActions.OPEN_FEATURE, location?.action)
         assertEquals(VoiceFeatures.LOCATION, location?.target)
 
-        val hazard = VoiceActionRouter.matchFastPath("start hazard mode")
-        assertNotNull(hazard)
-        assertEquals(VoiceActions.OPEN_FEATURE, hazard?.action)
-        assertEquals(VoiceFeatures.HAZARD, hazard?.target)
-
         val volunteer = VoiceActionRouter.matchFastPath("call a volunteer")
         assertNotNull(volunteer)
         assertEquals(VoiceActions.START_VOLUNTEER_HELP, volunteer?.action)
@@ -201,5 +196,158 @@ class WakeWordMatcherAndRouterTest {
         val photoLo = VoiceActionRouter.matchFastPath("फोटो लो")
         assertNotNull(photoLo)
         assertEquals(VoiceActions.CAPTURE_IMAGE, photoLo?.action)
+    }
+
+    @Test
+    fun `test Smart Reading expanded variations in English, Hindi, and Marathi`() {
+        val read1 = VoiceActionRouter.matchFastPath("read what's written here")
+        assertNotNull(read1)
+        assertEquals(VoiceActions.OPEN_FEATURE, read1?.action)
+        assertEquals(VoiceFeatures.READING, read1?.target)
+
+        val read2 = VoiceActionRouter.matchFastPath("can you read this")
+        assertNotNull(read2)
+        assertEquals(VoiceActions.OPEN_FEATURE, read2?.action)
+        assertEquals(VoiceFeatures.READING, read2?.target)
+
+        val readHindi1 = VoiceActionRouter.matchFastPath("क्या लिखा है")
+        assertNotNull(readHindi1)
+        assertEquals(VoiceActions.OPEN_FEATURE, readHindi1?.action)
+        assertEquals(VoiceFeatures.READING, readHindi1?.target)
+
+        val readMarathi1 = VoiceActionRouter.matchFastPath("काय लिहिलं आहे")
+        assertNotNull(readMarathi1)
+        assertEquals(VoiceActions.OPEN_FEATURE, readMarathi1?.action)
+        assertEquals(VoiceFeatures.READING, readMarathi1?.target)
+
+        val readHindi2 = VoiceActionRouter.matchFastPath("यहाँ क्या लिखा है")
+        assertNotNull(readHindi2)
+        assertEquals(VoiceActions.OPEN_FEATURE, readHindi2?.action)
+        assertEquals(VoiceFeatures.READING, readHindi2?.target)
+    }
+
+    @Test
+    fun `test VisionBridge Live and AI Voice Call fast paths`() {
+        val live = VoiceActionRouter.matchFastPath("open live vision")
+        assertNotNull(live)
+        assertEquals(VoiceActions.OPEN_FEATURE, live?.action)
+        assertEquals(VoiceFeatures.LIVE_VISION, live?.target)
+
+        val liveHindi = VoiceActionRouter.matchFastPath("लाइव विज़न")
+        assertNotNull(liveHindi)
+        assertEquals(VoiceActions.OPEN_FEATURE, liveHindi?.action)
+        assertEquals(VoiceFeatures.LIVE_VISION, liveHindi?.target)
+
+        val voiceCall = VoiceActionRouter.matchFastPath("start voice call")
+        assertNotNull(voiceCall)
+        assertEquals(VoiceActions.OPEN_FEATURE, voiceCall?.action)
+        assertEquals(VoiceFeatures.VOICE_CALL, voiceCall?.target)
+
+        val voiceCallHindi = VoiceActionRouter.matchFastPath("एआई से बात करो")
+        assertNotNull(voiceCallHindi)
+        assertEquals(VoiceActions.OPEN_FEATURE, voiceCallHindi?.action)
+        assertEquals(VoiceFeatures.VOICE_CALL, voiceCallHindi?.target)
+    }
+
+    @Test
+    fun `test Phone Calling dynamic extraction and controls`() {
+        val callMom = VoiceActionRouter.matchFastPath("call Mom")
+        assertNotNull(callMom)
+        assertEquals(VoiceActions.CALL_CONTACT, callMom?.action)
+        assertEquals("mom", callMom?.contactName?.lowercase())
+
+        val callRahul = VoiceActionRouter.matchFastPath("Rahul को कॉल करो")
+        assertNotNull(callRahul)
+        assertEquals(VoiceActions.CALL_CONTACT, callRahul?.action)
+        assertEquals("rahul", callRahul?.contactName?.lowercase())
+
+        val dialNum = VoiceActionRouter.matchFastPath("dial 9876543210")
+        assertNotNull(dialNum)
+        assertEquals(VoiceActions.CALL_NUMBER, dialNum?.action)
+        assertEquals("9876543210", dialNum?.phoneNumber)
+
+        val endCall = VoiceActionRouter.matchFastPath("hang up")
+        assertNotNull(endCall)
+        assertEquals(VoiceActions.END_CALL, endCall?.action)
+
+        val recentCalls = VoiceActionRouter.matchFastPath("who did I call recently")
+        assertNotNull(recentCalls)
+        assertEquals(VoiceActions.RECENT_CALLS, recentCalls?.action)
+    }
+
+    @Test
+    fun `test Daily News Briefing and Controls`() {
+        val news = VoiceActionRouter.matchFastPath("tell me the news")
+        assertNotNull(news)
+        assertEquals(VoiceActions.NEWS_BRIEFING, news?.action)
+
+        val newsHindi = VoiceActionRouter.matchFastPath("आज की खबरें सुनाओ")
+        assertNotNull(newsHindi)
+        assertEquals(VoiceActions.NEWS_BRIEFING, newsHindi?.action)
+
+        val nextNews = VoiceActionRouter.matchFastPath("next story")
+        assertNotNull(nextNews)
+        assertEquals(VoiceActions.NEWS_NEXT, nextNews?.action)
+
+        val prevNews = VoiceActionRouter.matchFastPath("previous story")
+        assertNotNull(prevNews)
+        assertEquals(VoiceActions.NEWS_PREV, prevNews?.action)
+
+        val localNews = VoiceActionRouter.matchFastPath("read local news")
+        assertNotNull(localNews)
+        assertEquals(VoiceActions.NEWS_CATEGORY, localNews?.action)
+        assertEquals("local", localNews?.newsCategory)
+    }
+
+    @Test
+    fun `test Entertainment Live Radio and Stories fast paths`() {
+        val radio = VoiceActionRouter.matchFastPath("start live radio")
+        assertNotNull(radio)
+        assertEquals(VoiceActions.LIVE_RADIO_PLAY, radio?.action)
+
+        val radioPause = VoiceActionRouter.matchFastPath("pause radio")
+        assertNotNull(radioPause)
+        assertEquals(VoiceActions.RADIO_PAUSE, radioPause?.action)
+
+        val radioResume = VoiceActionRouter.matchFastPath("रेडियो रोको")
+        assertNotNull(radioResume)
+        assertEquals(VoiceActions.RADIO_PAUSE, radioResume?.action)
+
+        val storyAlice = VoiceActionRouter.matchFastPath("play Alice in Wonderland")
+        assertNotNull(storyAlice)
+        assertEquals(VoiceActions.STORY_PLAY, storyAlice?.action)
+
+        val storyMystery = VoiceActionRouter.matchFastPath("tell me a mystery story")
+        assertNotNull(storyMystery)
+        assertEquals(VoiceActions.STORY_PLAY_GENRE, storyMystery?.action)
+        assertEquals("mystery", storyMystery?.genre)
+    }
+
+    @Test
+    fun `test Allowlist validation`() {
+        val valid = VoiceActionRouter.validateAction(
+            com.example.visionbridge.data.AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = VoiceFeatures.READING
+            )
+        )
+        assertEquals(VoiceActions.OPEN_FEATURE, valid.action)
+        assertEquals(VoiceFeatures.READING, valid.target)
+
+        val invalidAction = VoiceActionRouter.validateAction(
+            com.example.visionbridge.data.AssistantAction(
+                action = "MALICIOUS_ACTION",
+                target = VoiceFeatures.READING
+            )
+        )
+        assertEquals(VoiceActions.UNKNOWN, invalidAction.action)
+
+        val invalidTarget = VoiceActionRouter.validateAction(
+            com.example.visionbridge.data.AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = "non_existent_feature"
+            )
+        )
+        assertEquals(VoiceActions.UNKNOWN, invalidTarget.action)
     }
 }

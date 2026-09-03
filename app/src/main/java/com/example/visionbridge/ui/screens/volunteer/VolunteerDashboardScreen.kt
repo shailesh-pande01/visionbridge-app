@@ -65,24 +65,29 @@ fun VolunteerDashboardScreen(
         viewModel.loadRequests()
     }
 
+    DisposableEffect(Unit) {
+        // Volunteers don't need voice assistant listening during their shift
+        com.example.visionbridge.voice.VoiceManager.getInstance(context).pauseForCall()
+        onDispose {
+            com.example.visionbridge.voice.VoiceManager.getInstance(context).resumeAfterCall()
+        }
+    }
+
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.volunteer_dashboard_title), fontWeight = FontWeight.Bold) },
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.volunteer_dashboard_title),
+                subtitle = stringResource(R.string.volunteer_dashboard_subtitle),
                 actions = {
                     TextButton(
-                        onClick = {
-                            sessionManager.clearUser()
-                            onLogout()
-                        }
+                        onClick = { showLogoutDialog = true },
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text(stringResource(R.string.auth_logout), color = Emergency, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                }
             )
         },
         containerColor = BgPrimary
@@ -127,13 +132,13 @@ fun VolunteerDashboardScreen(
                                 Spacer(modifier = Modifier.width(14.dp))
                                 Column {
                                     Text(
-                                        text = "Welcome, ${currentUser?.name ?: "Volunteer"}!",
+                                        text = stringResource(R.string.volunteer_welcome, currentUser?.name ?: "Volunteer"),
                                         color = TextPrimary,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Ready to assist low-vision users.",
+                                        text = stringResource(R.string.volunteer_ready_desc),
                                         color = TextMuted,
                                         fontSize = 14.sp
                                     )
@@ -220,6 +225,11 @@ fun VolunteerDashboardScreen(
                                         val videoTrack = remoteStream?.videoTracks?.firstOrNull()
                                         videoTrack?.addSink(renderer)
                                     },
+                                    onRelease = { renderer ->
+                                        val videoTrack = remoteStream?.videoTracks?.firstOrNull()
+                                        videoTrack?.removeSink(renderer)
+                                        renderer.release()
+                                    },
                                     modifier = Modifier.fillMaxSize()
                                 )
                             }
@@ -264,7 +274,7 @@ fun VolunteerDashboardScreen(
                                     )
                                 ) {
                                     Text(
-                                        text = if (state.isMuted) "🔇 Unmute" else "🎙️ Mute",
+                                        text = if (state.isMuted) stringResource(R.string.volunteer_btn_unmute) else stringResource(R.string.volunteer_btn_mute),
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -312,6 +322,17 @@ fun VolunteerDashboardScreen(
                 }
             }
         }
+    }
+
+    if (showLogoutDialog) {
+        com.example.visionbridge.ui.components.ConfirmLogoutDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                sessionManager.clearUser()
+                onLogout()
+            },
+            onDismiss = { showLogoutDialog = false }
+        )
     }
 }
 

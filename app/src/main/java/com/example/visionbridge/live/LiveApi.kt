@@ -2,25 +2,16 @@ package com.example.visionbridge.live
 
 import android.content.Context
 import android.util.Log
-import com.example.visionbridge.api.ApiClient
 import com.example.visionbridge.api.ApiError
 import com.example.visionbridge.api.ApiResult
+import com.example.visionbridge.supabase.SupabaseClient
+import com.example.visionbridge.supabase.SupabaseConfig
 import org.json.JSONObject
 
-/**
- * Client API for requesting ephemeral Gemini Live credentials and executing tools.
- * Connects to the existing Render backend endpoints:
- *   - POST /api/live/session
- *   - POST /api/live/tool
- */
 class LiveApi(private val context: Context) {
 
-    private val apiClient = ApiClient.getInstance(context)
+    private val supabaseClient = SupabaseClient.getInstance(context)
 
-    /**
-     * Requests a short-lived ephemeral token and Live setup payload from Render backend.
-     * The permanent GEMINI_API_KEY is never transmitted to or stored on Android.
-     */
     fun requestLiveSession(
         mode: LiveMode = LiveMode.VISION,
         language: String = "en"
@@ -30,9 +21,9 @@ class LiveApi(private val context: Context) {
             put("mode", if (mode == LiveMode.VOICE) "voice" else "vision")
         }
 
-        Log.d(TAG, "Requesting Live session from backend (mode=${mode.name}, lang=$language)...")
+        Log.d(TAG, "Requesting Live session from Supabase (mode=${mode.name}, lang=$language)...")
 
-        return when (val result = apiClient.post(LIVE_SESSION_PATH, payload, authRequired = true)) {
+        return when (val result = supabaseClient.callFunction(SupabaseConfig.FUNCTION_LIVE_SESSION, payload, authRequired = true)) {
             is ApiResult.Success -> {
                 try {
                     val root = result.value
@@ -81,21 +72,16 @@ class LiveApi(private val context: Context) {
         }
     }
 
-    /**
-     * Executes validated safe application tools triggered by AI function calls.
-     */
     fun executeLiveTool(toolName: String, args: JSONObject = JSONObject()): ApiResult<JSONObject> {
         val payload = JSONObject().apply {
             put("toolName", toolName)
             put("args", args)
         }
 
-        return apiClient.post(LIVE_TOOL_PATH, payload, authRequired = true)
+        return supabaseClient.callFunction(SupabaseConfig.FUNCTION_LIVE_TOOL, payload, authRequired = false)
     }
 
     companion object {
         private const val TAG = "VB-LiveApi"
-        const val LIVE_SESSION_PATH = "/api/live/session"
-        const val LIVE_TOOL_PATH = "/api/live/tool"
     }
 }

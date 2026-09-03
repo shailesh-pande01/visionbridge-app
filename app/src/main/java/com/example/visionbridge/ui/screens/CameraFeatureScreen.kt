@@ -29,7 +29,6 @@ fun CameraFeatureScreen(
 ) {
     // Simulated states for UI design demonstration
     var hasResult by remember { mutableStateOf(false) }
-    var isHazard by remember { mutableStateOf(false) }
     var lowConfidence by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -72,7 +71,6 @@ fun CameraFeatureScreen(
                 } else {
                     // Result Overlay
                     ResultOverlay(
-                        isHazard = isHazard,
                         lowConfidence = lowConfidence,
                         onVolunteerHelp = onVolunteerHelp
                     )
@@ -99,7 +97,6 @@ fun CameraFeatureScreen(
                                 .clickable {
                                     hasResult = true
                                     // Randomly simulate different result states for demo
-                                    isHazard = listOf(true, false).random()
                                     lowConfidence = listOf(true, false).random()
                                 }
                                 .semantics { contentDescription = "Capture Image" },
@@ -131,7 +128,6 @@ fun CameraFeatureScreen(
                         Button(
                             onClick = {
                                 hasResult = false
-                                isHazard = false
                                 lowConfidence = false
                             },
                             modifier = Modifier
@@ -151,7 +147,6 @@ fun CameraFeatureScreen(
 
 @Composable
 fun ResultOverlay(
-    isHazard: Boolean,
     lowConfidence: Boolean,
     onVolunteerHelp: () -> Unit
 ) {
@@ -161,31 +156,7 @@ fun ResultOverlay(
             .padding(16.dp),
         verticalArrangement = Arrangement.Bottom
     ) {
-        if (isHazard && !lowConfidence) {
-            Surface(
-                color = Emergency,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "CAUTION",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 24.sp,
-                        modifier = Modifier.semantics { heading() }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Step down ahead. Please proceed carefully.",
-                        color = Color.White,
-                        fontSize = 20.sp
-                    )
-                }
-            }
-        } else if (lowConfidence) {
+        if (lowConfidence) {
             Surface(
                 color = BgSecondary.copy(alpha = 0.9f),
                 shape = RoundedCornerShape(16.dp),

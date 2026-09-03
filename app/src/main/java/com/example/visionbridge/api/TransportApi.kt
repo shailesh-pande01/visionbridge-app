@@ -2,11 +2,13 @@ package com.example.visionbridge.api
 
 import android.content.Context
 import com.example.visionbridge.data.TransportAnalysis
+import com.example.visionbridge.supabase.SupabaseClient
+import com.example.visionbridge.supabase.SupabaseConfig
 import org.json.JSONObject
 
 class TransportApi(private val context: Context) {
 
-    private val apiClient = ApiClient.getInstance(context)
+    private val supabaseClient = SupabaseClient.getInstance(context)
 
     fun analyzeTransport(
         imageBase64: String,
@@ -18,35 +20,25 @@ class TransportApi(private val context: Context) {
             .put("mimeType", mimeType)
             .put("language", language)
 
-        return when (val res = apiClient.post("/api/transport/analyze", body)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_TRANSPORT_ANALYZE, body)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
-                val data = res.value.optJSONObject("data")
-                if (data != null) {
-                    val type = data.optString("type", "None")
-                    val title = data.optString("title", "")
-                    val destination = data.optString("destination", "")
-                    val speech = data.optString("speech", "")
-                    val confidence = data.optDouble("confidence", 0.85)
+                val data = res.value.optJSONObject("data") ?: res.value
+                val type = data.optString("type", "None")
+                val title = data.optString("title", "")
+                val destination = data.optString("destination", "")
+                val speech = data.optString("speech", "")
+                val confidence = data.optDouble("confidence", 0.85)
 
-                    ApiResult.Success(
-                        TransportAnalysis(
-                            type = type,
-                            title = title,
-                            destination = destination,
-                            speech = speech,
-                            confidence = confidence
-                        )
+                ApiResult.Success(
+                    TransportAnalysis(
+                        type = type,
+                        title = title,
+                        destination = destination,
+                        speech = speech,
+                        confidence = confidence
                     )
-                } else {
-                    ApiResult.Failure(
-                        ApiError(
-                            kind = ApiError.Kind.MALFORMED_RESPONSE,
-                            userMessage = "Could not parse transport information.",
-                            technicalDetail = "Missing data object in transport response"
-                        )
-                    )
-                }
+                )
             }
         }
     }

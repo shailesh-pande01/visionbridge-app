@@ -195,7 +195,7 @@ fun TransportAssistantScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is TransportUiState.Processing -> {
-                tts.speak("Scanning for transport information. Please wait.")
+                tts.speak(context.getString(R.string.transport_processing_speech))
             }
             is TransportUiState.Result -> {
                 ContextMemoryManager.setContext("transport", "transport information", state.analysis.speech)
@@ -210,22 +210,14 @@ fun TransportAssistantScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_transport), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            com.example.visionbridge.ui.components.AppTopBar(
+                title = stringResource(R.string.feature_transport),
+                subtitle = stringResource(R.string.transport_subtitle),
+                onBack = {
+                    tts.stop()
+                    onBack()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                backContentDescription = stringResource(R.string.common_back)
             )
         },
         containerColor = BgPrimary
@@ -260,10 +252,11 @@ fun TransportAssistantScreen(
                                     CircularProgressIndicator(color = Accent)
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = "Scanning transport & signs…",
+                                        text = stringResource(R.string.transport_processing_speech),
                                         color = TextPrimary,
                                         fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }

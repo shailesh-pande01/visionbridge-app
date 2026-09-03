@@ -3,10 +3,12 @@ package com.example.visionbridge.ui.screens.auth
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.visionbridge.R
 import com.example.visionbridge.api.ApiResult
 import com.example.visionbridge.api.AuthApi
 import com.example.visionbridge.data.SessionManager
 import com.example.visionbridge.data.User
+import com.example.visionbridge.utils.LocaleHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,20 +31,26 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    fun login(username: String, password: String) {
-        if (username.isBlank() || password.isBlank()) {
-            _uiState.value = AuthUiState.Error("Please enter both username and password.")
+    private fun getLocalizedContext(): android.content.Context {
+        return LocaleHelper.wrapContext(getApplication(), sessionManager.language.value)
+    }
+
+    fun login(identifier: String, password: String) {
+        val cleanIdentifier = identifier.trim()
+        val cleanPassword = password.trim()
+
+        if (cleanIdentifier.isBlank() || cleanPassword.isBlank()) {
+            _uiState.value = AuthUiState.Error(getLocalizedContext().getString(R.string.auth_err_both_fields))
             return
         }
 
         _uiState.value = AuthUiState.Loading
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                authApi.login(username, password)
+                authApi.login(cleanIdentifier, cleanPassword)
             }
             when (result) {
                 is ApiResult.Success -> {
-                    sessionManager.saveUser(result.value)
                     _uiState.value = AuthUiState.Success(result.value)
                 }
                 is ApiResult.Failure -> {
@@ -52,20 +60,52 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun register(name: String, username: String, password: String, role: String) {
-        if (name.isBlank() || username.isBlank() || password.isBlank()) {
-            _uiState.value = AuthUiState.Error("Please fill in all fields.")
+    fun register(
+        name: String,
+        username: String,
+        password: String,
+        confirmPassword: String,
+        role: String,
+        email: String? = null
+    ) {
+        val cleanName = name.trim()
+        val cleanUsername = username.trim()
+        val cleanEmail = email?.trim()?.takeIf { it.isNotBlank() }
+        val localizedCtx = getLocalizedContext()
+
+        if (cleanName.isBlank() || cleanUsername.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+            _uiState.value = AuthUiState.Error(localizedCtx.getString(R.string.auth_err_all_fields))
+            return
+        }
+
+        if (password.length < 6) {
+            _uiState.value = AuthUiState.Error(localizedCtx.getString(R.string.auth_err_password_len))
+            return
+        }
+
+        if (password != confirmPassword) {
+            _uiState.value = AuthUiState.Error(localizedCtx.getString(R.string.auth_err_password_match))
+            return
+        }
+
+        if (cleanEmail != null && !cleanEmail.contains("@")) {
+            _uiState.value = AuthUiState.Error(localizedCtx.getString(R.string.auth_err_email_invalid))
             return
         }
 
         _uiState.value = AuthUiState.Loading
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
-                authApi.register(name, username, password, role)
+                authApi.register(
+                    name = cleanName,
+                    username = cleanUsername,
+                    password = password,
+                    role = role,
+                    emailInput = cleanEmail
+                )
             }
             when (result) {
                 is ApiResult.Success -> {
-                    sessionManager.saveUser(result.value)
                     _uiState.value = AuthUiState.Success(result.value)
                 }
                 is ApiResult.Failure -> {

@@ -3,7 +3,6 @@ package com.example.visionbridge.utils
 enum class VoiceIntent {
     SMART_READING,
     AI_SURROUNDINGS,
-    HAZARD_PRIORITIZATION,
     CURRENCY_READER,
     PUBLIC_TRANSPORT,
     SMART_OBJECT_FINDER,
@@ -91,16 +90,7 @@ object VoiceCommandParser {
             }
         }
 
-        // 7. Hazard Prioritization
-        val hazardKeywords = listOf(
-            "hazard", "obstacle", "danger", "is it safe", "check path", "check hazards",
-            "खतरा", "बाधा", "धोका", "अडथळा"
-        )
-        if (hazardKeywords.any { cleaned.contains(it) }) {
-            return ParsedVoiceCommand(VoiceIntent.HAZARD_PRIORITIZATION, rawCommand = trimmed)
-        }
-
-        // 8. Smart Reading
+        // 7. Smart Reading
         val readingKeywords = listOf(
             "read", "text", "menu", "sign", "label", "document", "book", "read this", "read for me",
             "पढ़ो", "वाचा", "मेन्यू", "मजकूर"
@@ -109,7 +99,7 @@ object VoiceCommandParser {
             return ParsedVoiceCommand(VoiceIntent.SMART_READING, rawCommand = trimmed)
         }
 
-        // 9. Surroundings
+        // 8. Surroundings
         val surroundingsKeywords = listOf(
             "surrounding", "around me", "what do you see", "describe scene", "look around", "what is in front",
             "आसपास", "सामने क्या है", "परिसर", "समोर काय आहे"
@@ -118,7 +108,7 @@ object VoiceCommandParser {
             return ParsedVoiceCommand(VoiceIntent.AI_SURROUNDINGS, rawCommand = trimmed)
         }
 
-        // 10. Home
+        // 9. Home
         val homeKeywords = listOf(
             "home", "go home", "take me home", "back",
             "होम", "घर", "मागे"
@@ -134,7 +124,6 @@ object VoiceCommandParser {
         return when (intent) {
             VoiceIntent.SMART_READING -> "reading"
             VoiceIntent.AI_SURROUNDINGS -> "surroundings"
-            VoiceIntent.HAZARD_PRIORITIZATION -> "hazard"
             VoiceIntent.CURRENCY_READER -> "currency"
             VoiceIntent.PUBLIC_TRANSPORT -> "transport"
             VoiceIntent.SMART_OBJECT_FINDER -> "finder"

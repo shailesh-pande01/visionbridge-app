@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.visionbridge.R
 import com.example.visionbridge.data.SessionManager
+import com.example.visionbridge.ui.components.AppTopBar
 import com.example.visionbridge.ui.theme.*
 import com.example.visionbridge.utils.TextToSpeechManager
 import com.example.visionbridge.voice.ScreenActionRegistry
@@ -77,17 +78,17 @@ fun EmergencySosScreen(
         when (val state = uiState) {
             is SosUiState.Countdown -> {
                 if (state.secondsLeft == 5) {
-                    tts.speak("Emergency SOS triggered. Sending alert in 5 seconds. Tap cancel to stop.")
+                    tts.speak(context.getString(R.string.sos_speech_countdown))
                 }
             }
             is SosUiState.Sending -> {
-                tts.speak("Sending emergency distress alerts with your live location.")
+                tts.speak(context.getString(R.string.sos_speech_sending))
             }
             is SosUiState.Active -> {
-                tts.speak("Emergency SOS is active. Your contacts have been notified on WhatsApp.")
+                tts.speak(context.getString(R.string.sos_speech_active))
             }
             is SosUiState.Cancelled -> {
-                tts.speak("Emergency SOS cancelled.")
+                tts.speak(context.getString(R.string.sos_speech_cancelled))
             }
             is SosUiState.Error -> {
                 tts.speak(state.message)
@@ -97,28 +98,23 @@ fun EmergencySosScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.feature_sos), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    TextButton(
-                        onClick = {
-                            tts.stop()
-                            viewModel.cancelSos()
-                            onBack()
-                        }
-                    ) {
-                        Text(stringResource(R.string.common_back), color = TextPrimary, fontSize = 18.sp)
-                    }
+            AppTopBar(
+                title = stringResource(R.string.feature_sos),
+                subtitle = stringResource(R.string.sos_subtitle),
+                onBack = {
+                    tts.stop()
+                    viewModel.cancelSos()
+                    onBack()
                 },
+                backContentDescription = stringResource(R.string.common_cancel),
                 actions = {
-                    TextButton(onClick = onManageContacts) {
-                        Text("Contacts", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    TextButton(
+                        onClick = onManageContacts,
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text(stringResource(R.string.sos_contacts_title), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BgPrimary,
-                    titleContentColor = TextPrimary
-                )
+                }
             )
         },
         containerColor = BgPrimary
@@ -223,7 +219,7 @@ fun EmergencySosScreen(
                         )
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "Dispatching Emergency WhatsApp Alert…",
+                            text = stringResource(R.string.sos_dispatching),
                             color = TextPrimary,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
@@ -312,7 +308,7 @@ fun EmergencySosScreen(
                         Text(text = "✅", fontSize = 60.sp)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Emergency mode inactive.",
+                            text = stringResource(R.string.sos_inactive),
                             color = Accent,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold

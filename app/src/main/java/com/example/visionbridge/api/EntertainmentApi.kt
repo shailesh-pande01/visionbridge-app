@@ -3,12 +3,14 @@ package com.example.visionbridge.api
 import android.content.Context
 import android.net.Uri
 import com.example.visionbridge.data.*
+import com.example.visionbridge.supabase.SupabaseClient
+import com.example.visionbridge.supabase.SupabaseConfig
 import org.json.JSONArray
 import org.json.JSONObject
 
-class EntertainmentApi(context: Context) {
+class EntertainmentApi(private val context: Context) {
 
-    private val apiClient = ApiClient.getInstance(context)
+    private val supabaseClient = SupabaseClient.getInstance(context)
 
     // ── 1. AI Radio & Live Radio ─────────────────────────────────────
 
@@ -23,33 +25,42 @@ class EntertainmentApi(context: Context) {
         search: String = "",
         limit: Int = 10
     ): ApiResult<Pair<RadioLocation, List<RadioStation>>> {
-        val uriBuilder = Uri.parse("/api/entertainment/radio/stations/local").buildUpon()
+        val uriBuilder = Uri.parse("").buildUpon()
         if (latitude != null && longitude != null) {
             uriBuilder.appendQueryParameter("latitude", latitude.toString())
             uriBuilder.appendQueryParameter("longitude", longitude.toString())
         }
         if (city.isNotBlank()) uriBuilder.appendQueryParameter("city", city)
         if (state.isNotBlank()) uriBuilder.appendQueryParameter("state", state)
-        if (country.isNotBlank()) uriBuilder.appendQueryParameter("country", country)
         if (countryCode.isNotBlank()) uriBuilder.appendQueryParameter("countryCode", countryCode)
         if (language.isNotBlank() && language != "local" && language != "all") {
             uriBuilder.appendQueryParameter("language", language)
         }
-        if (search.isNotBlank()) uriBuilder.appendQueryParameter("search", search)
+        if (search.isNotBlank()) uriBuilder.appendQueryParameter("q", search)
         uriBuilder.appendQueryParameter("limit", limit.toString())
 
-        val path = uriBuilder.build().toString()
-        return when (val res = apiClient.get(path, authRequired = false)) {
+        val queryString = uriBuilder.build().toString().trimStart('?')
+        val funcPath = if (queryString.isNotBlank()) "${SupabaseConfig.FUNCTION_RADIO_STATIONS}?$queryString" else SupabaseConfig.FUNCTION_RADIO_STATIONS
+
+        val body = JSONObject()
+            .put("city", city)
+            .put("state", state)
+            .put("countryCode", countryCode)
+            .put("language", language)
+            .put("search", search)
+            .put("limit", limit)
+
+        return when (val res = supabaseClient.callFunction(funcPath, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val locJson = data.optJSONObject("location")
                     val location = RadioLocation(
-                        city = locJson?.optString("city", "") ?: "",
-                        state = locJson?.optString("state", "") ?: "",
-                        country = locJson?.optString("country", "") ?: "",
-                        countryCode = locJson?.optString("countryCode", "IN") ?: "IN"
+                        city = locJson?.optString("city", city) ?: city,
+                        state = locJson?.optString("state", state) ?: state,
+                        country = locJson?.optString("country", country) ?: country,
+                        countryCode = locJson?.optString("countryCode", countryCode) ?: countryCode
                     )
                     val stationsArray = data.optJSONArray("stations") ?: JSONArray()
                     val stations = parseRadioStations(stationsArray)
@@ -66,19 +77,18 @@ class EntertainmentApi(context: Context) {
         language: String = "",
         limit: Int = 10
     ): ApiResult<List<RadioStation>> {
-        val uriBuilder = Uri.parse("/api/entertainment/radio/stations/search").buildUpon()
-        uriBuilder.appendQueryParameter("q", query)
-        if (language.isNotBlank() && language != "all") {
-            uriBuilder.appendQueryParameter("language", language)
-        }
-        uriBuilder.appendQueryParameter("limit", limit.toString())
+        val body = JSONObject()
+            .put("q", query)
+            .put("language", language)
+            .put("limit", limit)
 
-        val path = uriBuilder.build().toString()
-        return when (val res = apiClient.get(path, authRequired = false)) {
+        val funcPath = "${SupabaseConfig.FUNCTION_RADIO_STATIONS}?q=${Uri.encode(query)}&limit=$limit"
+
+        return when (val res = supabaseClient.callFunction(funcPath, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val stationsArray = data.optJSONArray("stations") ?: JSONArray()
                     val stations = parseRadioStations(stationsArray)
                     ApiResult.Success(stations)
@@ -99,11 +109,11 @@ class EntertainmentApi(context: Context) {
             .put("previousSummary", previousSummary)
             .put("language", language)
 
-        return when (val res = apiClient.post("/api/entertainment/radio/segment", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_RADIO_SEGMENT, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val segment = RadioSegment(
                         title = data.optString("title", "AI Radio Segment"),
                         topic = data.optString("topic", topic),
@@ -125,109 +135,66 @@ class EntertainmentApi(context: Context) {
         search: String = "",
         language: String = "all"
     ): ApiResult<List<StorySummary>> {
-        val uriBuilder = Uri.parse("/api/entertainment/stories/catalog").buildUpon()
-        if (genre.isNotBlank() && genre != "all") uriBuilder.appendQueryParameter("genre", genre)
-        if (search.isNotBlank()) uriBuilder.appendQueryParameter("search", search)
-        if (language.isNotBlank() && language != "all") uriBuilder.appendQueryParameter("language", language)
+        var list = BUILTIN_PUBLIC_DOMAIN_STORIES.map { it.toSummary() }
 
-        val path = uriBuilder.build().toString()
-        return when (val res = apiClient.get(path, authRequired = false)) {
-            is ApiResult.Failure -> res
-            is ApiResult.Success -> {
-                try {
-                    val data = res.value.getJSONObject("data")
-                    val storiesArray = data.optJSONArray("stories") ?: JSONArray()
-                    val list = mutableListOf<StorySummary>()
-                    for (i in 0 until storiesArray.length()) {
-                        val item = storiesArray.getJSONObject(i)
-                        list.add(parseStorySummary(item))
-                    }
-                    ApiResult.Success(list)
-                } catch (e: Exception) {
-                    ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse stories catalog", e.message.orEmpty()))
-                }
+        if (language.isNotBlank() && language != "all") {
+            list = list.filter { it.language.equals(language, ignoreCase = true) }
+        }
+
+        if (genre.isNotBlank() && genre != "all") {
+            list = list.filter { it.genre.equals(genre, ignoreCase = true) }
+        }
+
+        if (search.isNotBlank()) {
+            val q = search.lowercase()
+            list = list.filter {
+                it.title.lowercase().contains(q) ||
+                it.author.lowercase().contains(q) ||
+                it.description.lowercase().contains(q) ||
+                it.genre.lowercase().contains(q)
             }
         }
+
+        return ApiResult.Success(list)
     }
 
     fun getStoryById(storyId: String): ApiResult<StoryDetail> {
-        val path = "/api/entertainment/stories/${Uri.encode(storyId)}"
-        return when (val res = apiClient.get(path, authRequired = false)) {
-            is ApiResult.Failure -> res
-            is ApiResult.Success -> {
-                try {
-                    val data = res.value.getJSONObject("data")
-                    val chaptersArray = data.optJSONArray("chapters") ?: JSONArray()
-                    val chapters = mutableListOf<StoryChapter>()
-                    for (i in 0 until chaptersArray.length()) {
-                        val ch = chaptersArray.getJSONObject(i)
-                        chapters.add(
-                            StoryChapter(
-                                chapterNumber = ch.optInt("chapterNumber", i + 1),
-                                title = ch.optString("title", "Chapter ${i + 1}"),
-                                audioUrl = ch.optString("audioUrl", ""),
-                                duration = ch.optString("duration", ""),
-                                summary = ch.optString("summary", ""),
-                                text = ch.optString("text", "")
-                            )
-                        )
-                    }
-
-                    val summary = parseStorySummary(data)
-                    val detail = StoryDetail(
-                        id = summary.id,
-                        title = summary.title,
-                        author = summary.author,
-                        publicationYear = summary.publicationYear,
-                        genre = summary.genre,
-                        language = summary.language,
-                        audioLanguageNotice = summary.audioLanguageNotice,
-                        source = summary.source,
-                        sourceUrl = summary.sourceUrl,
-                        librivoxUrl = summary.librivoxUrl,
-                        rightsStatus = summary.rightsStatus,
-                        audioAvailable = summary.audioAvailable,
-                        textAvailable = summary.textAvailable,
-                        approxDuration = summary.approxDuration,
-                        totalChapters = summary.totalChapters,
-                        description = summary.description,
-                        coverTheme = summary.coverTheme,
-                        chapters = chapters
-                    )
-                    ApiResult.Success(detail)
-                } catch (e: Exception) {
-                    ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse story detail", e.message.orEmpty()))
-                }
-            }
+        val story = BUILTIN_PUBLIC_DOMAIN_STORIES.find { it.id.equals(storyId, ignoreCase = true) }
+        return if (story != null) {
+            ApiResult.Success(story)
+        } else {
+            ApiResult.Failure(ApiError(ApiError.Kind.HTTP_ERROR, "Story not found", "No story with id $storyId"))
         }
     }
 
     fun getStoryProgress(storyId: String? = null): ApiResult<StoryProgressData?> {
-        val uriBuilder = Uri.parse("/api/entertainment/story/progress").buildUpon()
-        if (!storyId.isNullOrBlank()) {
-            uriBuilder.appendQueryParameter("storyId", storyId)
+        val query = if (!storyId.isNullOrBlank()) {
+            "story_progress?story_id=eq.$storyId&select=*&limit=1"
+        } else {
+            "story_progress?select=*&order=updated_at.desc&limit=1"
         }
-        val path = uriBuilder.build().toString()
-        return when (val res = apiClient.get(path, authRequired = true)) {
+
+        return when (val res = supabaseClient.restGet(query, authRequired = true)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.optJSONObject("data")
-                    if (data == null) {
+                    val arr = JSONArray(res.value)
+                    if (arr.length() == 0) {
                         ApiResult.Success(null)
                     } else {
+                        val data = arr.getJSONObject(0)
                         val progress = StoryProgressData(
-                            id = if (data.has("_id")) data.getString("_id") else null,
-                            userId = if (data.has("userId")) data.getString("userId") else null,
-                            storyId = data.optString("storyId", ""),
-                            chapterIndex = data.optInt("chapterIndex", 0),
-                            positionSeconds = data.optInt("positionSeconds", 0),
-                            storyTitle = data.optString("storyTitle", ""),
-                            chapterTitle = data.optString("chapterTitle", ""),
+                            id = if (data.has("id") && !data.isNull("id")) data.optString("id") else null,
+                            userId = if (data.has("user_id") && !data.isNull("user_id")) data.optString("user_id") else null,
+                            storyId = data.optString("story_id", ""),
+                            chapterIndex = data.optInt("chapter_index", 0),
+                            positionSeconds = data.optInt("position_seconds", 0),
+                            storyTitle = data.optString("story_title", ""),
+                            chapterTitle = data.optString("chapter_title", ""),
                             author = data.optString("author", ""),
                             genre = data.optString("genre", "classics"),
-                            lastPlayedAt = if (data.has("lastPlayedAt")) data.getString("lastPlayedAt") else null,
-                            updatedAt = if (data.has("updatedAt")) data.getString("updatedAt") else null
+                            lastPlayedAt = if (data.has("last_played_at") && !data.isNull("last_played_at")) data.optString("last_played_at") else null,
+                            updatedAt = if (data.has("updated_at") && !data.isNull("updated_at")) data.optString("updated_at") else null
                         )
                         ApiResult.Success(progress)
                     }
@@ -240,15 +207,20 @@ class EntertainmentApi(context: Context) {
 
     fun saveStoryProgress(progress: StoryProgressData): ApiResult<Boolean> {
         val body = JSONObject()
-            .put("storyId", progress.storyId)
-            .put("chapterIndex", progress.chapterIndex)
-            .put("positionSeconds", progress.positionSeconds)
-            .put("storyTitle", progress.storyTitle)
-            .put("chapterTitle", progress.chapterTitle)
+            .put("story_id", progress.storyId)
+            .put("chapter_index", progress.chapterIndex)
+            .put("position_seconds", progress.positionSeconds)
+            .put("story_title", progress.storyTitle)
+            .put("chapter_title", progress.chapterTitle)
             .put("author", progress.author)
             .put("genre", progress.genre)
+            .put("last_played_at", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }.format(java.util.Date()))
 
-        return when (val res = apiClient.post("/api/entertainment/story/progress", body, authRequired = true)) {
+        // Use PostgREST upsert with on_conflict
+        val path = "story_progress?on_conflict=user_id,story_id"
+        return when (val res = supabaseClient.restPost(path, body, preferReturn = false, authRequired = true)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> ApiResult.Success(true)
         }
@@ -261,11 +233,11 @@ class EntertainmentApi(context: Context) {
             .put("category", category)
             .put("language", language)
 
-        return when (val res = apiClient.post("/api/entertainment/games/trivia", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_GAMES_TRIVIA, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val optsArray = data.optJSONArray("options") ?: JSONArray()
                     val options = mutableListOf<String>()
                     for (i in 0 until optsArray.length()) options.add(optsArray.getString(i))
@@ -286,11 +258,11 @@ class EntertainmentApi(context: Context) {
 
     fun getRiddle(language: String = "en"): ApiResult<RiddleItem> {
         val body = JSONObject().put("language", language)
-        return when (val res = apiClient.post("/api/entertainment/games/riddle", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_GAMES_RIDDLE, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val riddle = RiddleItem(
                         riddle = data.getString("riddle"),
                         answer = data.getString("answer"),
@@ -306,11 +278,11 @@ class EntertainmentApi(context: Context) {
 
     fun getMemoryChallenge(level: Int = 1, language: String = "en"): ApiResult<MemoryChallengeData> {
         val body = JSONObject().put("level", level).put("language", language)
-        return when (val res = apiClient.post("/api/entertainment/games/memory", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_GAMES_MEMORY, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val wordsArray = data.optJSONArray("words") ?: JSONArray()
                     val words = mutableListOf<String>()
                     for (i in 0 until wordsArray.length()) words.add(wordsArray.getString(i))
@@ -330,11 +302,11 @@ class EntertainmentApi(context: Context) {
 
     fun startTwentyQuestions(language: String = "en"): ApiResult<TwentyQuestionsSession> {
         val body = JSONObject().put("language", language)
-        return when (val res = apiClient.post("/api/entertainment/games/twenty-questions", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_GAMES_TWENTY_QUESTIONS, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val session = TwentyQuestionsSession(
                         secretObject = data.getString("secretObject"),
                         maxQuestions = data.optInt("maxQuestions", 20)
@@ -353,11 +325,11 @@ class EntertainmentApi(context: Context) {
             .put("question", question)
             .put("language", language)
 
-        return when (val res = apiClient.post("/api/entertainment/games/twenty-questions/ask", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_GAMES_TWENTY_QUESTIONS, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val answer = TwentyQuestionsAnswer(
                         isGuess = data.optBoolean("isGuess", false),
                         isCorrect = data.optBoolean("isCorrect", false),
@@ -378,11 +350,11 @@ class EntertainmentApi(context: Context) {
             .put("gameType", gameType)
             .put("language", language)
 
-        return when (val res = apiClient.post("/api/entertainment/games/evaluate", body, authRequired = false)) {
+        return when (val res = supabaseClient.callFunction(SupabaseConfig.FUNCTION_GAMES_EVALUATE, body, authRequired = false)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = res.value.optJSONObject("data") ?: res.value
                     val eval = GameEvaluationResult(
                         isCorrect = data.optBoolean("isCorrect", false),
                         expectedAnswer = data.optString("expectedAnswer", expectedAnswer),
@@ -400,71 +372,99 @@ class EntertainmentApi(context: Context) {
     // ── 4. Daily Challenge & Progress ─────────────────────────────────
 
     fun getDailyChallenge(language: String = "en"): ApiResult<DailyChallengeData> {
-        val path = "/api/entertainment/daily-challenge?language=${Uri.encode(language)}"
-        return when (val res = apiClient.get(path, authRequired = true)) {
-            is ApiResult.Failure -> res
-            is ApiResult.Success -> {
-                try {
-                    val data = res.value.getJSONObject("data")
-                    val chJson = data.getJSONObject("challenge")
-                    val challenge = DailyChallengeItem(
-                        type = chJson.optString("type", "trivia"),
-                        question = chJson.getString("question"),
-                        answer = chJson.getString("answer"),
-                        xp = chJson.optInt("xp", 25)
-                    )
-                    val result = DailyChallengeData(
-                        date = data.optString("date", ""),
-                        challenge = challenge,
-                        isCompleted = data.optBoolean("isCompleted", false)
-                    )
-                    ApiResult.Success(result)
-                } catch (e: Exception) {
-                    ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse daily challenge", e.message.orEmpty()))
-                }
-            }
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        val challenges = listOf(
+            DailyChallengeItem("trivia", "What is the closest star to planet Earth?", "The Sun", 25),
+            DailyChallengeItem("riddle", "The more you take, the more you leave behind. What are they?", "Footsteps", 25),
+            DailyChallengeItem("trivia", "What is the chemical symbol for water?", "H2O", 25),
+            DailyChallengeItem("riddle", "What has to be broken before you can use it?", "An egg", 25),
+            DailyChallengeItem("trivia", "What is the hardest natural substance on Earth?", "Diamond", 25)
+        )
+        val dayOfMonth = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_MONTH)
+        val challenge = challenges[dayOfMonth % challenges.size]
+
+        var isCompleted = false
+        val progressRes = getProgress()
+        if (progressRes is ApiResult.Success) {
+            isCompleted = progressRes.value.dailyChallengeCompleted
         }
+
+        return ApiResult.Success(DailyChallengeData(today, challenge, isCompleted))
     }
 
     fun completeDailyChallenge(userAnswer: String, expectedAnswer: String, language: String = "en"): ApiResult<DailyChallengeResult> {
-        val body = JSONObject()
-            .put("userAnswer", userAnswer)
-            .put("expectedAnswer", expectedAnswer)
-            .put("language", language)
+        val normExp = expectedAnswer.trim().lowercase()
+        val normUser = userAnswer.trim().lowercase()
+        val isCorrect = normUser.contains(normExp) || normExp.contains(normUser)
 
-        return when (val res = apiClient.post("/api/entertainment/daily-challenge/complete", body, authRequired = true)) {
+        if (!isCorrect) {
+            return ApiResult.Success(
+                DailyChallengeResult(
+                    completed = false,
+                    isCorrect = false,
+                    message = "Incorrect answer. Try again!"
+                )
+            )
+        }
+
+        val addXpRes = addXp(25, "first_challenge")
+        val totalXp = if (addXpRes is ApiResult.Success) addXpRes.value.xp else 25
+
+        return ApiResult.Success(
+            DailyChallengeResult(
+                completed = true,
+                isCorrect = true,
+                earnedXp = 25,
+                streak = 1,
+                totalXp = totalXp,
+                achievements = listOf("first_challenge"),
+                message = "Congratulations! Daily challenge completed."
+            )
+        )
+    }
+
+    fun getProgress(): ApiResult<UserProgressData> {
+        return when (val res = supabaseClient.restGet("game_progress?select=*&limit=1", authRequired = true)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
-                    val achArray = data.optJSONArray("achievements") ?: JSONArray()
-                    val achievements = mutableListOf<String>()
-                    for (i in 0 until achArray.length()) achievements.add(achArray.getString(i))
+                    val arr = JSONArray(res.value)
+                    if (arr.length() == 0) {
+                        ApiResult.Success(UserProgressData())
+                    } else {
+                        val data = arr.getJSONObject(0)
+                        val achArray = data.optJSONArray("achievements") ?: JSONArray()
+                        val achievements = mutableListOf<String>()
+                        for (i in 0 until achArray.length()) achievements.add(achArray.getString(i))
 
-                    val result = DailyChallengeResult(
-                        completed = data.optBoolean("completed", false),
-                        isCorrect = data.optBoolean("isCorrect", false),
-                        alreadyCompletedToday = data.optBoolean("alreadyCompletedToday", false),
-                        earnedXp = data.optInt("earnedXp", 0),
-                        streak = data.optInt("streak", 1),
-                        totalXp = data.optInt("totalXp", 0),
-                        achievements = achievements,
-                        message = data.optString("message", "")
-                    )
-                    ApiResult.Success(result)
+                        val progress = UserProgressData(
+                            xp = data.optInt("xp", 0),
+                            score = data.optInt("score", 0),
+                            streak = data.optInt("streak", 0),
+                            achievements = achievements,
+                            dailyChallengeCompleted = data.optBoolean("daily_challenge_completed", false),
+                            gamesPlayed = data.optInt("games_played", 0),
+                            correctAnswers = data.optInt("correct_answers", 0)
+                        )
+                        ApiResult.Success(progress)
+                    }
                 } catch (e: Exception) {
-                    ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse challenge completion", e.message.orEmpty()))
+                    ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse user progress", e.message.orEmpty()))
                 }
             }
         }
     }
 
-    fun getProgress(): ApiResult<UserProgressData> {
-        return when (val res = apiClient.get("/api/entertainment/progress", authRequired = true)) {
+    fun addXp(amount: Int = 10, achievement: String = ""): ApiResult<UserProgressData> {
+        val params = JSONObject()
+            .put("p_amount", amount)
+            .put("p_achievement", achievement.takeIf { it.isNotBlank() })
+
+        return when (val res = supabaseClient.rpc("add_user_xp", params)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
+                    val data = JSONObject(res.value)
                     val achArray = data.optJSONArray("achievements") ?: JSONArray()
                     val achievements = mutableListOf<String>()
                     for (i in 0 until achArray.length()) achievements.add(achArray.getString(i))
@@ -474,35 +474,8 @@ class EntertainmentApi(context: Context) {
                         score = data.optInt("score", 0),
                         streak = data.optInt("streak", 0),
                         achievements = achievements,
-                        dailyChallengeCompleted = data.optBoolean("dailyChallengeCompleted", false),
-                        gamesPlayed = data.optInt("gamesPlayed", 0),
-                        correctAnswers = data.optInt("correctAnswers", 0)
-                    )
-                    ApiResult.Success(progress)
-                } catch (e: Exception) {
-                    ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse user progress", e.message.orEmpty()))
-                }
-            }
-        }
-    }
-
-    fun addXp(amount: Int = 10, achievement: String = ""): ApiResult<UserProgressData> {
-        val body = JSONObject().put("amount", amount)
-        if (achievement.isNotBlank()) body.put("achievement", achievement)
-
-        return when (val res = apiClient.post("/api/entertainment/progress/add-xp", body, authRequired = true)) {
-            is ApiResult.Failure -> res
-            is ApiResult.Success -> {
-                try {
-                    val data = res.value.getJSONObject("data")
-                    val achArray = data.optJSONArray("achievements") ?: JSONArray()
-                    val achievements = mutableListOf<String>()
-                    for (i in 0 until achArray.length()) achievements.add(achArray.getString(i))
-
-                    val progress = UserProgressData(
-                        xp = data.optInt("xp", 0),
-                        score = data.optInt("score", 0),
-                        achievements = achievements
+                        gamesPlayed = data.optInt("games_played", 0),
+                        correctAnswers = data.optInt("correct_answers", 0)
                     )
                     ApiResult.Success(progress)
                 } catch (e: Exception) {
@@ -515,25 +488,30 @@ class EntertainmentApi(context: Context) {
     // ── 5. Preferences ────────────────────────────────────────────────
 
     fun getPreferences(): ApiResult<EntertainmentPreferences> {
-        return when (val res = apiClient.get("/api/entertainment/preferences", authRequired = true)) {
+        return when (val res = supabaseClient.restGet("entertainment_preferences?select=*&limit=1", authRequired = true)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {
                 try {
-                    val data = res.value.getJSONObject("data")
-                    val topicsArray = data.optJSONArray("radioTopics") ?: JSONArray()
-                    val topics = mutableListOf<String>()
-                    for (i in 0 until topicsArray.length()) topics.add(topicsArray.getString(i))
+                    val arr = JSONArray(res.value)
+                    if (arr.length() == 0) {
+                        ApiResult.Success(EntertainmentPreferences())
+                    } else {
+                        val data = arr.getJSONObject(0)
+                        val topicsArray = data.optJSONArray("radio_topics") ?: JSONArray()
+                        val topics = mutableListOf<String>()
+                        for (i in 0 until topicsArray.length()) topics.add(topicsArray.getString(i))
 
-                    val genresArray = data.optJSONArray("favoriteGenres") ?: JSONArray()
-                    val genres = mutableListOf<String>()
-                    for (i in 0 until genresArray.length()) genres.add(genresArray.getString(i))
+                        val genresArray = data.optJSONArray("favorite_genres") ?: JSONArray()
+                        val genres = mutableListOf<String>()
+                        for (i in 0 until genresArray.length()) genres.add(genresArray.getString(i))
 
-                    val prefs = EntertainmentPreferences(
-                        radioTopics = if (topics.isNotEmpty()) topics else listOf("facts", "technology", "science", "motivation", "humor"),
-                        favoriteGenres = if (genres.isNotEmpty()) genres else listOf("adventure", "mystery"),
-                        preferredLanguage = data.optString("preferredLanguage", "en")
-                    )
-                    ApiResult.Success(prefs)
+                        val prefs = EntertainmentPreferences(
+                            radioTopics = if (topics.isNotEmpty()) topics else listOf("facts", "technology", "science", "motivation", "humor"),
+                            favoriteGenres = if (genres.isNotEmpty()) genres else listOf("adventure", "mystery"),
+                            preferredLanguage = data.optString("preferred_language", "en")
+                        )
+                        ApiResult.Success(prefs)
+                    }
                 } catch (e: Exception) {
                     ApiResult.Failure(ApiError(ApiError.Kind.MALFORMED_RESPONSE, "Failed to parse preferences", e.message.orEmpty()))
                 }
@@ -543,11 +521,11 @@ class EntertainmentApi(context: Context) {
 
     fun updatePreferences(prefs: EntertainmentPreferences): ApiResult<EntertainmentPreferences> {
         val body = JSONObject()
-            .put("radioTopics", JSONArray(prefs.radioTopics))
-            .put("favoriteGenres", JSONArray(prefs.favoriteGenres))
-            .put("preferredLanguage", prefs.preferredLanguage)
+            .put("radio_topics", JSONArray(prefs.radioTopics))
+            .put("favorite_genres", JSONArray(prefs.favoriteGenres))
+            .put("preferred_language", prefs.preferredLanguage)
 
-        return when (val res = apiClient.put("/api/entertainment/preferences", body, authRequired = true)) {
+        return when (val res = supabaseClient.restPost("entertainment_preferences?on_conflict=user_id", body, preferReturn = false, authRequired = true)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> ApiResult.Success(prefs)
         }
@@ -587,38 +565,97 @@ class EntertainmentApi(context: Context) {
         return list
     }
 
-    private fun parseStorySummary(json: JSONObject): StorySummary {
-        val coverJson = json.optJSONObject("coverTheme")
-        val coverTheme = if (coverJson != null) {
-            StoryCoverTheme(
-                primaryColor = coverJson.optString("primaryColor", "#00D4FF"),
-                secondaryColor = coverJson.optString("secondaryColor", "#0A2540"),
-                icon = coverJson.optString("icon", "📖"),
-                accent = coverJson.optString("accent", "blue")
+    companion object {
+        val BUILTIN_PUBLIC_DOMAIN_STORIES = listOf(
+            StoryDetail(
+                id = "alice-in-wonderland",
+                title = "Alice's Adventures in Wonderland",
+                author = "Lewis Carroll",
+                publicationYear = 1865,
+                genre = "fantasy",
+                language = "en",
+                audioLanguageNotice = "English Audio (LibriVox Public Domain)",
+                source = "LibriVox / Project Gutenberg",
+                sourceUrl = "https://www.gutenberg.org/ebooks/11",
+                librivoxUrl = "https://librivox.org/alices-adventures-in-wonderland-by-lewis-carroll-5/",
+                rightsStatus = "Public Domain (Published 1865)",
+                audioAvailable = true,
+                textAvailable = true,
+                approxDuration = "1 hr 35 min",
+                totalChapters = 4,
+                description = "A young girl named Alice falls down a rabbit hole into a subterranean fantasy realm of strange creatures.",
+                coverTheme = StoryCoverTheme("#00D4FF", "#0A2540", "🐇", "alice-blue"),
+                chapters = listOf(
+                    StoryChapter(
+                        chapterNumber = 1,
+                        title = "Chapter 1: Down the Rabbit-Hole",
+                        audioUrl = "https://ia800301.us.archive.org/19/items/alices_adventures_1005_librivox/alicesadventuresinwonderland_01_carroll_64kb.mp3",
+                        duration = "11 min",
+                        summary = "Alice follows a White Rabbit down a deep hole.",
+                        text = "Alice was beginning to get very tired of sitting by her sister on the bank..."
+                    ),
+                    StoryChapter(
+                        chapterNumber = 2,
+                        title = "Chapter 2: The Pool of Tears",
+                        audioUrl = "https://ia800301.us.archive.org/19/items/alices_adventures_1005_librivox/alicesadventuresinwonderland_02_carroll_64kb.mp3",
+                        duration = "12 min",
+                        summary = "Alice grows to nine feet tall and cries a pool of tears.",
+                        text = "Curiouser and curiouser! cried Alice..."
+                    )
+                )
+            ),
+            StoryDetail(
+                id = "sherlock-holmes-scandal",
+                title = "A Scandal in Bohemia",
+                author = "Arthur Conan Doyle",
+                publicationYear = 1891,
+                genre = "mystery",
+                language = "en",
+                audioLanguageNotice = "English Audio (LibriVox Public Domain)",
+                source = "LibriVox / Project Gutenberg",
+                sourceUrl = "https://www.gutenberg.org/ebooks/1661",
+                librivoxUrl = "https://librivox.org/the-adventures-of-sherlock-holmes-by-sir-arthur-conan-doyle-2/",
+                rightsStatus = "Public Domain (Published 1891)",
+                audioAvailable = true,
+                textAvailable = true,
+                approxDuration = "45 min",
+                totalChapters = 3,
+                description = "Sherlock Holmes is hired by the King of Bohemia to recover an incriminating photograph.",
+                coverTheme = StoryCoverTheme("#F59E0B", "#1E1B18", "🕵️", "gold"),
+                chapters = listOf(
+                    StoryChapter(
+                        chapterNumber = 1,
+                        title = "Part 1: The Bohemian King",
+                        audioUrl = "https://ia800301.us.archive.org/29/items/adventures_holmes_0711_librivox/adventuresofsherlockholmes_01_doyle_64kb.mp3",
+                        duration = "15 min",
+                        summary = "Sherlock Holmes meets his royal client.",
+                        text = "To Sherlock Holmes she is always the woman..."
+                    )
+                )
             )
-        } else {
-            StoryCoverTheme()
-        }
-
-        return StorySummary(
-            id = json.getString("id"),
-            title = json.getString("title"),
-            author = json.optString("author", "Unknown"),
-            publicationYear = json.optInt("publicationYear", 1900),
-            genre = json.optString("genre", "classics"),
-            language = json.optString("language", "en"),
-            audioLanguageNotice = json.optString("audioLanguageNotice", ""),
-            source = json.optString("source", ""),
-            sourceUrl = json.optString("sourceUrl", ""),
-            librivoxUrl = json.optString("librivoxUrl", ""),
-            rightsStatus = json.optString("rightsStatus", "Public Domain"),
-            audioAvailable = json.optBoolean("audioAvailable", false),
-            textAvailable = json.optBoolean("textAvailable", true),
-            approxDuration = json.optString("approxDuration", ""),
-            totalChapters = json.optInt("totalChapters", json.optInt("chapterCount", 1)),
-            chapterCount = json.optInt("chapterCount", json.optInt("totalChapters", 1)),
-            description = json.optString("description", ""),
-            coverTheme = coverTheme
         )
+
+        private fun StoryDetail.toSummary(): StorySummary {
+            return StorySummary(
+                id = id,
+                title = title,
+                author = author,
+                publicationYear = publicationYear,
+                genre = genre,
+                language = language,
+                audioLanguageNotice = audioLanguageNotice,
+                source = source,
+                sourceUrl = sourceUrl,
+                librivoxUrl = librivoxUrl,
+                rightsStatus = rightsStatus,
+                audioAvailable = audioAvailable,
+                textAvailable = textAvailable,
+                approxDuration = approxDuration,
+                totalChapters = totalChapters,
+                chapterCount = chapters.size,
+                description = description,
+                coverTheme = coverTheme
+            )
+        }
     }
 }
