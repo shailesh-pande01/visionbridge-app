@@ -14,6 +14,12 @@ class AssistantApi(private val context: Context) {
 
     companion object {
         private const val TAG = "VB_VOICE_GEMINI"
+
+        fun isAcknowledgment(text: String?): Boolean {
+            if (text.isNullOrBlank()) return true
+            val regex = Regex("(?i)^(?:i'?ll check|let me check|checking|one moment|i can check|i will check|main check|मैं देखता|मैं चेक|मी तपासतो|मी चेक).*")
+            return regex.containsMatchIn(text.trim())
+        }
     }
 
     private val supabaseClient = SupabaseClient.getInstance(context)
@@ -24,7 +30,7 @@ class AssistantApi(private val context: Context) {
         language: String = "en"
     ): ApiResult<AssistantAction> {
         val trimmedCommand = command.trim()
-        val contextJson = ContextMemoryManager.toJson()
+        val contextJson = ContextMemoryManager.buildContextPayloadForCommand(trimmedCommand)
 
         val body = JSONObject()
             .put("command", trimmedCommand)
@@ -70,37 +76,70 @@ class AssistantApi(private val context: Context) {
     ): ApiResult<AssistantAction> {
         val trimmedQuestion = question.trim()
         val contextJson = ContextMemoryManager.toJson()
+        val readingSession = ContextMemoryManager.getActiveReadingSession()
+        val readingText = readingSession?.extractedText ?: contextJson.optString("readingText", contextJson.optString("contextSummary"))
+
+        // Fast path: Try local grounded QA first for immediate zero-latency answer
+        val localQa = com.example.visionbridge.voice.SmartReadingGroundedQa.answer(readingText, trimmedQuestion, language)
+        if (localQa.answered) {
+            Log.d("VB_VOICE_FOLLOWUP", "Local Grounded Q&A answered: '${localQa.answer}'")
+            val action = AssistantAction(
+                action = VoiceActions.ASK_CONTEXTUAL_QUESTION,
+                question = trimmedQuestion,
+                answer = localQa.answer,
+                speech = localQa.answer,
+                confidence = localQa.confidence,
+                type = "answer"
+            )
+            ContextMemoryManager.addTurn(trimmedQuestion, localQa.answer)
+            return ApiResult.Success(action)
+        }
 
         val body = JSONObject()
             .put("question", trimmedQuestion)
+            .put("readingText", readingText)
             .put("context", contextJson)
             .put("language", language)
 
-        Log.d("VB_VOICE_FOLLOWUP", "Sending follow-up question: '$trimmedQuestion' (language=$language, activeFeature=${contextJson.optString("activeFeature")})")
+        Log.d("VB_VOICE_FOLLOWUP", "Sending follow-up question: '$trimmedQuestion' (language=$language, textLength=${readingText.length})")
 
         // 1. Try Supabase Edge Function first
         val supabaseResult = supabaseClient.callFunction(SupabaseConfig.FUNCTION_ASSISTANT_ASK, body)
         if (supabaseResult is ApiResult.Success) {
             val action = parseAskResponse(trimmedQuestion, supabaseResult.value, language)
-            return ApiResult.Success(action)
+            if (!isAcknowledgment(action.speech) && !action.speech.isNullOrBlank()) {
+                return ApiResult.Success(action)
+            }
         }
 
         // 2. Fallback to MERN Backend API
         val backendResult = apiClient.post("/api/assistant/ask", body)
         if (backendResult is ApiResult.Success) {
             val action = parseAskResponse(trimmedQuestion, backendResult.value, language)
-            return ApiResult.Success(action)
+            if (!isAcknowledgment(action.speech) && !action.speech.isNullOrBlank()) {
+                return ApiResult.Success(action)
+            }
         }
 
-        // 3. Graceful Offline Fallback
-        val offlineSpeech = getLocalizedErrorMessage(language)
+        // 3. Graceful Offline / Fallback
+        val fallbackText = if (readingText.isNotBlank()) {
+            when (language) {
+                "hi" -> "मुझे कैप्चर किए गए दस्तावेज़ में यह जानकारी नहीं मिली।"
+                "mr" -> "मला कॅप्चर केलेल्या दस्तऐवजात ही माहिती सापडली नाही."
+                else -> "I couldn't find that in the text I captured."
+            }
+        } else {
+            getLocalizedErrorMessage(language)
+        }
+
         return ApiResult.Success(
             AssistantAction(
                 action = VoiceActions.ASK_CONTEXTUAL_QUESTION,
                 question = trimmedQuestion,
-                speech = offlineSpeech,
-                type = "error",
-                confidence = 0.0
+                speech = fallbackText,
+                answer = fallbackText,
+                type = "answer",
+                confidence = 0.5
             )
         )
     }
@@ -148,6 +187,23 @@ class AssistantApi(private val context: Context) {
         // Strict allowlist validation
         val validatedAction = VoiceActionRouter.validateAction(rawAssistantAction)
 
+        // If Gemini classified as ASK_CONTEXTUAL_QUESTION but speech is a generic acknowledgment,
+        // intercept and resolve the true grounded answer immediately.
+        if (validatedAction.action == VoiceActions.ASK_CONTEXTUAL_QUESTION &&
+            (isAcknowledgment(validatedAction.speech) || validatedAction.speech.isNullOrBlank())
+        ) {
+            val readingSession = ContextMemoryManager.getActiveReadingSession()
+            val text = readingSession?.extractedText ?: ""
+            val localQa = com.example.visionbridge.voice.SmartReadingGroundedQa.answer(text, question ?: userUtterance, language)
+            if (localQa.answered) {
+                return validatedAction.copy(
+                    speech = localQa.answer,
+                    answer = localQa.answer,
+                    confidence = localQa.confidence
+                )
+            }
+        }
+
         if (!validatedAction.speech.isNullOrBlank()) {
             ContextMemoryManager.addTurn(userUtterance, validatedAction.speech)
         }
@@ -180,6 +236,7 @@ class AssistantApi(private val context: Context) {
 
         return action
     }
+
 
     private fun getLocalizedErrorMessage(language: String): String {
         return when (language.lowercase()) {

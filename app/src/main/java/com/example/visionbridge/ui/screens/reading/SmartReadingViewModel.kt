@@ -85,14 +85,22 @@ class SmartReadingViewModel(
                                 "label, menu, or document."
                         )
                     } else {
-                        com.example.visionbridge.data.ContextMemoryManager.setContext("reading", "Extracted text", text)
+                        val isLow = extraction.confidence != null && extraction.confidence < LOW_CONFIDENCE_THRESHOLD
+                        val session = com.example.visionbridge.data.ReadingSession(
+                            sessionId = "reading-${System.currentTimeMillis()}",
+                            extractedText = text,
+                            language = language,
+                            timestamp = System.currentTimeMillis(),
+                            confidence = extraction.confidence,
+                            isLowConfidence = isLow
+                        )
+                        com.example.visionbridge.data.ContextMemoryManager.setActiveReadingSession(session)
                         ReadingUiState.Result(
                             id = outcomeIds.incrementAndGet(),
                             text = text,
                             confidence = extraction.confidence,
                             // Same 0.70 bar the web client uses to flag an unreliable read.
-                            isLowConfidence = extraction.confidence != null &&
-                                    extraction.confidence < LOW_CONFIDENCE_THRESHOLD
+                            isLowConfidence = isLow
                         )
                     }
                 }

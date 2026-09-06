@@ -96,9 +96,9 @@ class WakeWordMatcherAndRouterTest {
         assertNotNull(enSos)
         assertEquals(VoiceActions.EMERGENCY_SOS, enSos?.action)
 
-        val enHelpMe = VoiceActionRouter.matchFastPath("help me")
-        assertNotNull(enHelpMe)
-        assertEquals(VoiceActions.EMERGENCY_SOS, enHelpMe?.action)
+        val hiDanger = VoiceActionRouter.matchFastPath("i am in danger")
+        assertNotNull(hiDanger)
+        assertEquals(VoiceActions.EMERGENCY_SOS, hiDanger?.action)
 
         val hiSos = VoiceActionRouter.matchFastPath("बचाओ")
         assertNotNull(hiSos)
@@ -107,6 +107,20 @@ class WakeWordMatcherAndRouterTest {
         val mrSos = VoiceActionRouter.matchFastPath("मला वाचवा")
         assertNotNull(mrSos)
         assertEquals(VoiceActions.EMERGENCY_SOS, mrSos?.action)
+    }
+
+    @Test
+    fun `test Ambiguous help me command triggers clarification instead of SOS`() {
+        val enHelpMe = VoiceActionRouter.matchFastPath("help me")
+        assertNotNull(enHelpMe)
+        assertEquals(VoiceActions.UNKNOWN, enHelpMe?.action)
+        assertEquals("clarification", enHelpMe?.type)
+        assertTrue(enHelpMe?.speech?.contains("Do you want me to describe your surroundings, read text, or find an object?") == true)
+
+        val hiHelpMe = VoiceActionRouter.matchFastPath("मदद करो")
+        assertNotNull(hiHelpMe)
+        assertEquals(VoiceActions.UNKNOWN, hiHelpMe?.action)
+        assertEquals("clarification", hiHelpMe?.type)
     }
 
     @Test
@@ -324,30 +338,128 @@ class WakeWordMatcherAndRouterTest {
     }
 
     @Test
-    fun `test Allowlist validation`() {
+    fun `test Allowlist validation and confidence safety`() {
         val valid = VoiceActionRouter.validateAction(
             com.example.visionbridge.data.AssistantAction(
                 action = VoiceActions.OPEN_FEATURE,
-                target = VoiceFeatures.READING
+                target = VoiceFeatures.READING,
+                confidence = 0.95
             )
         )
         assertEquals(VoiceActions.OPEN_FEATURE, valid.action)
         assertEquals(VoiceFeatures.READING, valid.target)
 
+        val lowConfidence = VoiceActionRouter.validateAction(
+            com.example.visionbridge.data.AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = VoiceFeatures.READING,
+                confidence = 0.50
+            )
+        )
+        assertEquals(VoiceActions.UNKNOWN, lowConfidence.action)
+        assertEquals("clarification", lowConfidence.type)
+
         val invalidAction = VoiceActionRouter.validateAction(
             com.example.visionbridge.data.AssistantAction(
                 action = "MALICIOUS_ACTION",
-                target = VoiceFeatures.READING
+                target = VoiceFeatures.READING,
+                confidence = 0.95
             )
         )
         assertEquals(VoiceActions.UNKNOWN, invalidAction.action)
 
+        val synonymTarget = VoiceActionRouter.validateAction(
+            com.example.visionbridge.data.AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = "camera",
+                confidence = 0.95
+            )
+        )
+        assertEquals(VoiceActions.OPEN_FEATURE, synonymTarget.action)
+        assertEquals(VoiceFeatures.SURROUNDINGS, synonymTarget.target)
+
         val invalidTarget = VoiceActionRouter.validateAction(
             com.example.visionbridge.data.AssistantAction(
                 action = VoiceActions.OPEN_FEATURE,
-                target = "non_existent_feature"
+                target = "non_existent_feature",
+                confidence = 0.95
             )
         )
         assertEquals(VoiceActions.UNKNOWN, invalidTarget.action)
+    }
+
+    @Test
+    fun `test natural language conversational commands with polite fillers`() {
+        val politeRead = VoiceActionRouter.matchFastPath("could you please read this document")
+        assertNotNull(politeRead)
+        assertEquals(VoiceActions.OPEN_FEATURE, politeRead?.action)
+        assertEquals(VoiceFeatures.READING, politeRead?.target)
+
+        val longCamera = VoiceActionRouter.matchFastPath("open the camera and help me understand what is in front of me")
+        assertNotNull(longCamera)
+        assertEquals(VoiceActions.OPEN_FEATURE, longCamera?.action)
+        assertEquals(VoiceFeatures.SURROUNDINGS, longCamera?.target)
+
+        val politeObjects = VoiceActionRouter.matchFastPath("can you please tell me what objects are around me")
+        assertNotNull(politeObjects)
+        assertEquals(VoiceActions.OPEN_FEATURE, politeObjects?.action)
+        assertEquals(VoiceFeatures.SURROUNDINGS, politeObjects?.target)
+
+        val hazardCheck = VoiceActionRouter.matchFastPath("check for hazards")
+        assertNotNull(hazardCheck)
+        assertEquals(VoiceActions.OPEN_FEATURE, hazardCheck?.action)
+        assertEquals(VoiceFeatures.SURROUNDINGS, hazardCheck?.target)
+    }
+
+    @Test
+    fun `test Object Finder generic open vs dynamic target extraction`() {
+        val genericOpen = VoiceActionRouter.matchFastPath("open object finder")
+        assertNotNull(genericOpen)
+        assertEquals(VoiceActions.OPEN_FEATURE, genericOpen?.action)
+        assertEquals(VoiceFeatures.OBJECT_FINDER, genericOpen?.target)
+
+        val genericFindObjects = VoiceActionRouter.matchFastPath("find objects")
+        assertNotNull(genericFindObjects)
+        assertEquals(VoiceActions.OPEN_FEATURE, genericFindObjects?.action)
+        assertEquals(VoiceFeatures.OBJECT_FINDER, genericFindObjects?.target)
+
+        val dynamicFind = VoiceActionRouter.matchFastPath("find my white cane")
+        assertNotNull(dynamicFind)
+        assertEquals(VoiceActions.FIND_OBJECT, dynamicFind?.action)
+        assertEquals("white cane", dynamicFind?.objectName)
+
+        val dynamicHindi = VoiceActionRouter.matchFastPath("मेरा चश्मा ढूँढो")
+        assertNotNull(dynamicHindi)
+        assertEquals(VoiceActions.FIND_OBJECT, dynamicHindi?.action)
+        assertEquals("चश्मा", dynamicHindi?.objectName)
+    }
+
+    @Test
+    fun `test routeForTarget synonym normalization`() {
+        assertEquals("surroundings", VoiceActionRouter.routeForTarget("camera"))
+        assertEquals("surroundings", VoiceActionRouter.routeForTarget("vision"))
+        assertEquals("surroundings", VoiceActionRouter.routeForTarget("hazard"))
+        assertEquals("reading", VoiceActionRouter.routeForTarget("read"))
+        assertEquals("reading", VoiceActionRouter.routeForTarget("document"))
+        assertEquals("currency", VoiceActionRouter.routeForTarget("money"))
+        assertEquals("currency", VoiceActionRouter.routeForTarget("cash"))
+        assertEquals("finder?target=keys", VoiceActionRouter.routeForTarget("object_finder", "keys"))
+        assertEquals("finder", VoiceActionRouter.routeForTarget("finder"))
+        assertEquals("sos", VoiceActionRouter.routeForTarget("danger"))
+        assertEquals("calling", VoiceActionRouter.routeForTarget("phone"))
+        assertEquals("voice_call", VoiceActionRouter.routeForTarget("assistant"))
+    }
+
+    @Test
+    fun `test Hindi and Marathi conversational commands with politeness prefixes`() {
+        val politeHindi = VoiceActionRouter.matchFastPath("कृपया यह मेन्यू पढ़ो")
+        assertNotNull(politeHindi)
+        assertEquals(VoiceActions.OPEN_FEATURE, politeHindi?.action)
+        assertEquals(VoiceFeatures.READING, politeHindi?.target)
+
+        val politeMarathi = VoiceActionRouter.matchFastPath("कृपया हे वाचा")
+        assertNotNull(politeMarathi)
+        assertEquals(VoiceActions.OPEN_FEATURE, politeMarathi?.action)
+        assertEquals(VoiceFeatures.READING, politeMarathi?.target)
     }
 }

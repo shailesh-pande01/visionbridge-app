@@ -14,9 +14,9 @@ class WebRtcSignalingClient {
     interface SignalingListener {
         fun onRequestAccepted(request: HelpRequest) {}
         fun onRequestUpdated(request: HelpRequest) {}
-        fun onRequestCancelled() {}
-        fun onRequestCompleted() {}
-        fun onRequestRejected() {}
+        fun onRequestCancelled(request: HelpRequest? = null) {}
+        fun onRequestCompleted(request: HelpRequest? = null) {}
+        fun onRequestRejected(request: HelpRequest? = null) {}
         fun onOfferReceived(sdp: String, type: String)
         fun onAnswerReceived(sdp: String, type: String)
         fun onIceCandidateReceived(sdpMid: String, sdpMLineIndex: Int, candidate: String)
@@ -147,9 +147,18 @@ class WebRtcSignalingClient {
                             }
                         }
 
-                        "request_cancelled" -> listener.onRequestCancelled()
-                        "request_completed" -> listener.onRequestCompleted()
-                        "request_rejected" -> listener.onRequestRejected()
+                        "request_cancelled" -> {
+                            val req = try { VolunteerApi.parseHelpRequest(payload) } catch (_: Exception) { null }
+                            listener.onRequestCancelled(req)
+                        }
+                        "request_completed" -> {
+                            val req = try { VolunteerApi.parseHelpRequest(payload) } catch (_: Exception) { null }
+                            listener.onRequestCompleted(req)
+                        }
+                        "request_rejected" -> {
+                            val req = try { VolunteerApi.parseHelpRequest(payload) } catch (_: Exception) { null }
+                            listener.onRequestRejected(req)
+                        }
                     }
                 }
 
@@ -165,9 +174,9 @@ class WebRtcSignalingClient {
                             if (req.id == currentRoomId || currentRoomId == "dashboard" || currentRoomId.isNullOrBlank()) {
                                 when (req.status.uppercase()) {
                                     "ACCEPTED" -> listener.onRequestAccepted(req)
-                                    "CANCELLED" -> listener.onRequestCancelled()
-                                    "COMPLETED" -> listener.onRequestCompleted()
-                                    "REJECTED" -> listener.onRequestRejected()
+                                    "CANCELLED" -> listener.onRequestCancelled(req)
+                                    "COMPLETED" -> listener.onRequestCompleted(req)
+                                    "REJECTED" -> listener.onRequestRejected(req)
                                     else -> listener.onRequestUpdated(req)
                                 }
                             }

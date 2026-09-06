@@ -20,6 +20,7 @@ class WebRtcCallManager(
 
     private var localAudioTrack: AudioTrack? = null
     private var localVideoTrack: VideoTrack? = null
+    private var remoteVideoTrack: VideoTrack? = null
     private var videoCapturer: VideoCapturer? = null
     private var surfaceTextureHelper: SurfaceTextureHelper? = null
 
@@ -45,6 +46,7 @@ class WebRtcCallManager(
 
     interface CallEvents {
         fun onIceCandidate(candidate: IceCandidate)
+        fun onRemoteVideoTrack(videoTrack: VideoTrack) {}
         fun onRemoteStreamAdded(mediaStream: MediaStream)
         fun onCallConnected()
         fun onCallDisconnected()
@@ -62,9 +64,14 @@ class WebRtcCallManager(
             .createInitializationOptions()
         PeerConnectionFactory.initialize(options)
 
-        // Using SoftwareVideoEncoderFactory with modern WebRTC to guarantee VP8 works on Samsung chips
-        val encoderFactory = SoftwareVideoEncoderFactory()
-        val decoderFactory = SoftwareVideoDecoderFactory()
+        // Using DefaultVideoEncoderFactory and DefaultVideoDecoderFactory with shared EglBase context
+        // for zero-copy hardware acceleration, with automatic fallback to software encoders
+        val encoderFactory = DefaultVideoEncoderFactory(
+            eglBase.eglBaseContext,
+            /* enableIntelVp8 = */ true,
+            /* enableH264HighProfile = */ true
+        )
+        val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
 
         val adm = JavaAudioDeviceModule.builder(context)
             .setUseHardwareAcousticEchoCanceler(true)
@@ -82,7 +89,7 @@ class WebRtcCallManager(
     private fun notifyCallConnected() {
         if (!isConnectedNotified) {
             isConnectedNotified = true
-            Log.i(TAG, "WebRTC Call fully CONNECTED! Notifying onCallConnected listener.")
+            Log.i(TAG, "[WEBRTC_CONNECTION] WebRTC Call fully CONNECTED! Notifying onCallConnected listener.")
             events?.onCallConnected()
         }
     }
@@ -102,35 +109,30 @@ class WebRtcCallManager(
         if (!isVolunteer) {
             videoCapturer = createCameraCapturer()
             if (videoCapturer != null) {
-                Log.i(TAG, "CAMERA_CAPTURER_CREATED")
+                Log.i(TAG, "[WEBRTC_VIDEO] CAMERA_CAPTURER_CREATED")
                 surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglBase.eglBaseContext)
                 val videoSource = factory.createVideoSource(videoCapturer!!.isScreencast)
-                Log.i(TAG, "VIDEO_SOURCE_CREATED")
+                Log.i(TAG, "[WEBRTC_VIDEO] VIDEO_SOURCE_CREATED")
                 videoCapturer!!.initialize(surfaceTextureHelper, context, videoSource.capturerObserver)
-                Log.i(TAG, "CAMERA_INITIALIZED")
+                Log.i(TAG, "[WEBRTC_VIDEO] CAMERA_INITIALIZED")
                 videoCapturer!!.startCapture(640, 480, 30)
-                Log.i(TAG, "CAMERA_START_CAPTURE_CALLED")
+                Log.i(TAG, "[WEBRTC_VIDEO] CAMERA_START_CAPTURE_CALLED")
 
                 localVideoTrack = factory.createVideoTrack("ARDAMSv0", videoSource)
-                Log.i(TAG, "VIDEO_TRACK_CREATED")
-                peerConnection?.addTransceiver(
-                    localVideoTrack,
-                    RtpTransceiver.RtpTransceiverInit(
-                        RtpTransceiver.RtpTransceiverDirection.SEND_ONLY,
-                        listOf("ARDAMS")
-                    )
-                )
-                Log.i(TAG, "User back camera capture started and added via addTransceiver (SEND_ONLY)")
+                localVideoTrack?.setEnabled(true)
+                Log.i(TAG, "[WEBRTC_VIDEO] User VideoTrack created and enabled: ${localVideoTrack?.id()}")
+                peerConnection?.addTrack(localVideoTrack, listOf("ARDAMS"))
+                Log.i(TAG, "[WEBRTC_VIDEO] User back camera video track added to PeerConnection (stream=ARDAMS)")
             } else {
-                Log.w(TAG, "No suitable camera found to create video track")
+                Log.w(TAG, "[WEBRTC_VIDEO] No suitable camera found to create video track")
             }
         } else {
-            // Volunteer requests to receive video only
+            // Volunteer requests to receive video only (camera remains strictly OFF)
             peerConnection?.addTransceiver(
                 MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
                 RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
             )
-            Log.i(TAG, "Volunteer video recvonly transceiver added")
+            Log.i(TAG, "[WEBRTC_VIDEO] Volunteer video recvonly transceiver added (volunteer camera OFF)")
         }
 
         // 2. Audio track for both roles (bidirectional audio)
@@ -152,24 +154,34 @@ class WebRtcCallManager(
             val senders = pc.senders
             val receivers = pc.receivers
             val transceivers = pc.transceivers
-            Log.i(TAG, "--- PeerConnection Track State ---")
-            Log.i(TAG, "Senders: ${senders.size}, Receivers: ${receivers.size}, Transceivers: ${transceivers.size}")
+            Log.i(TAG, "[WEBRTC_CONNECTION] --- PeerConnection Track State ---")
+            Log.i(TAG, "[WEBRTC_CONNECTION] Senders: ${senders.size}, Receivers: ${receivers.size}, Transceivers: ${transceivers.size}")
             transceivers.forEachIndexed { i, t ->
-                Log.i(TAG, "Transceiver $i: direction=${t.direction}, mid=${t.mid}, senderTrack=${t.sender.track()?.kind()}")
+                Log.i(TAG, "[WEBRTC_CONNECTION] Transceiver $i: direction=${t.direction}, mid=${t.mid}, senderTrack=${t.sender.track()?.kind()}")
             }
-            Log.i(TAG, "Local Audio Track enabled: ${localAudioTrack?.enabled()}")
-            Log.i(TAG, "Local Video Track enabled: ${localVideoTrack?.enabled()}")
-            Log.i(TAG, "----------------------------------")
+            Log.i(TAG, "[WEBRTC_CONNECTION] Local Audio Track enabled: ${localAudioTrack?.enabled()}")
+            Log.i(TAG, "[WEBRTC_VIDEO] Local Video Track enabled: ${localVideoTrack?.enabled()}")
+            Log.i(TAG, "[WEBRTC_CONNECTION] ----------------------------------")
         }
     }
 
     fun attachLocalPreview(renderer: VideoSink) {
         localVideoTrack?.addSink(renderer)
-        Log.i(TAG, "Attached local preview renderer")
+        Log.i(TAG, "[WEBRTC_VIDEO] Attached local preview renderer")
     }
 
     fun detachLocalPreview(renderer: VideoSink) {
         localVideoTrack?.removeSink(renderer)
+    }
+
+    fun attachRemoteVideo(renderer: VideoSink) {
+        remoteVideoTrack?.addSink(renderer)
+        Log.i(TAG, "[WEBRTC_VIDEO] Attached remote video renderer to track: ${remoteVideoTrack?.id()}")
+    }
+
+    fun detachRemoteVideo(renderer: VideoSink) {
+        remoteVideoTrack?.removeSink(renderer)
+        Log.i(TAG, "[WEBRTC_VIDEO] Detached remote video renderer")
     }
 
     private fun createPeerConnection() {
@@ -226,11 +238,17 @@ class WebRtcCallManager(
             }
             override fun onAddStream(stream: MediaStream?) {
                 if (stream != null) {
-                    Log.i(TAG, "Remote stream added: audio=${stream.audioTracks.size}, video=${stream.videoTracks.size}")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Remote stream added: audio=${stream.audioTracks.size}, video=${stream.videoTracks.size}")
+                    for (track in stream.videoTracks) {
+                        track.setEnabled(true)
+                        remoteVideoTrack = track
+                        Log.i(TAG, "[WEBRTC_VIDEO] Enabled incoming remote VideoTrack from stream: ${track.id()}")
+                        events?.onRemoteVideoTrack(track)
+                    }
                     for (track in stream.audioTracks) {
                         track.setEnabled(true)
                         track.setVolume(1.0)
-                        Log.i(TAG, "Enabled remote audio track: ${track.id()}")
+                        Log.i(TAG, "[WEBRTC_CONNECTION] Enabled remote audio track: ${track.id()}")
                     }
                     notifyCallConnected()
                     events?.onRemoteStreamAdded(stream)
@@ -241,15 +259,30 @@ class WebRtcCallManager(
             override fun onRenegotiationNeeded() {}
             override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
                 val track = receiver?.track()
-                Log.i(TAG, "Remote track added: ${track?.kind()}, id=${track?.id()}")
-                if (track is AudioTrack) {
+                Log.i(TAG, "[WEBRTC_VIDEO] Remote track added: kind=${track?.kind()}, id=${track?.id()}")
+                if (track is VideoTrack) {
+                    track.setEnabled(true)
+                    remoteVideoTrack = track
+                    Log.i(TAG, "[WEBRTC_VIDEO] Remote VideoTrack enabled and attached: ${track.id()}")
+                    events?.onRemoteVideoTrack(track)
+                } else if (track is AudioTrack) {
                     track.setEnabled(true)
                     track.setVolume(1.0)
-                    Log.i(TAG, "Explicitly enabled incoming AudioTrack at full volume")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Explicitly enabled incoming AudioTrack at full volume: ${track.id()}")
                     notifyCallConnected()
                 }
                 if (mediaStreams != null && mediaStreams.isNotEmpty()) {
                     events?.onRemoteStreamAdded(mediaStreams[0])
+                }
+            }
+            override fun onTrack(transceiver: RtpTransceiver?) {
+                val track = transceiver?.receiver?.track()
+                Log.i(TAG, "[WEBRTC_VIDEO] onTrack callback: kind=${track?.kind()}, id=${track?.id()}")
+                if (track is VideoTrack) {
+                    track.setEnabled(true)
+                    remoteVideoTrack = track
+                    Log.i(TAG, "[WEBRTC_VIDEO] Remote VideoTrack handled via onTrack: ${track.id()}")
+                    events?.onRemoteVideoTrack(track)
                 }
             }
         })
@@ -260,24 +293,27 @@ class WebRtcCallManager(
         peerConnection?.createOffer(object : SdpObserver {
             override fun onCreateSuccess(desc: SessionDescription?) {
                 if (desc != null) {
+                    val hasAudio = desc.description.contains("m=audio")
+                    val hasVideo = desc.description.contains("m=video")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Created Offer SDP. Contains Audio: $hasAudio, Contains Video: $hasVideo")
                     peerConnection?.setLocalDescription(object : SdpObserver {
                         override fun onCreateSuccess(p0: SessionDescription?) {}
                         override fun onSetSuccess() {
-                            Log.d(TAG, "Local offer set successfully")
+                            Log.d(TAG, "[WEBRTC_CONNECTION] Local offer set successfully")
                             callback(desc)
                         }
                         override fun onCreateFailure(error: String?) {
-                            Log.e(TAG, "setLocalDescription onCreateFailure: $error")
+                            Log.e(TAG, "[WEBRTC_CONNECTION] setLocalDescription onCreateFailure: $error")
                         }
                         override fun onSetFailure(error: String?) {
-                            Log.e(TAG, "setLocalDescription onSetFailure: $error")
+                            Log.e(TAG, "[WEBRTC_CONNECTION] setLocalDescription onSetFailure: $error")
                         }
                     }, desc)
                 }
             }
             override fun onSetSuccess() {}
             override fun onCreateFailure(error: String?) {
-                Log.e(TAG, "createOffer failed: $error")
+                Log.e(TAG, "[WEBRTC_CONNECTION] createOffer failed: $error")
             }
             override fun onSetFailure(error: String?) {}
         }, constraints)
@@ -291,31 +327,26 @@ class WebRtcCallManager(
                     // Diagnostic logging for SDP answer content
                     val hasAudio = desc.description.contains("m=audio")
                     val hasVideo = desc.description.contains("m=video")
-                    Log.i(TAG, "Created Answer SDP. Contains Audio: $hasAudio, Contains Video: $hasVideo")
-                    
-                    val modifiedDescStr = preferH264(desc.description)
-                    val modifiedDesc = SessionDescription(desc.type, modifiedDescStr)
-                    
-                    Log.d(TAG, "Full Modified Answer SDP:\n${modifiedDesc.description}")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Created Answer SDP. Contains Audio: $hasAudio, Contains Video: $hasVideo")
 
                     peerConnection?.setLocalDescription(object : SdpObserver {
                         override fun onCreateSuccess(p0: SessionDescription?) {}
                         override fun onSetSuccess() {
-                            Log.d(TAG, "Local answer set successfully")
-                            callback(modifiedDesc)
+                            Log.d(TAG, "[WEBRTC_CONNECTION] Local answer set successfully")
+                            callback(desc)
                         }
                         override fun onCreateFailure(error: String?) {
-                            Log.e(TAG, "setLocalDescription (answer) onCreateFailure: $error")
+                            Log.e(TAG, "[WEBRTC_CONNECTION] setLocalDescription (answer) onCreateFailure: $error")
                         }
                         override fun onSetFailure(error: String?) {
-                            Log.e(TAG, "setLocalDescription (answer) onSetFailure: $error")
+                            Log.e(TAG, "[WEBRTC_CONNECTION] setLocalDescription (answer) onSetFailure: $error")
                         }
-                    }, modifiedDesc)
+                    }, desc)
                 }
             }
             override fun onSetSuccess() {}
             override fun onCreateFailure(error: String?) {
-                Log.e(TAG, "createAnswer failed: $error")
+                Log.e(TAG, "[WEBRTC_CONNECTION] createAnswer failed: $error")
             }
             override fun onSetFailure(error: String?) {}
         }, constraints)
@@ -406,6 +437,7 @@ class WebRtcCallManager(
 
             localAudioTrack = null
             localVideoTrack = null
+            remoteVideoTrack = null
             events = null
 
             // Restore normal audio routing
@@ -419,7 +451,7 @@ class WebRtcCallManager(
             
             eglBase.release()
 
-            Log.i(TAG, "WebRtcCallManager cleanup complete")
+            Log.i(TAG, "[WEBRTC_CONNECTION] WebRtcCallManager cleanup complete")
         } catch (e: Exception) {
             Log.e(TAG, "Error disposing peerConnection and audio resources", e)
         }
@@ -457,40 +489,6 @@ class WebRtcCallManager(
         } catch (e: Exception) {
             Log.w(TAG, "Error setting speakerphone state: $enable", e)
         }
-    }
-
-    private fun preferH264(sdp: String): String {
-        val lines = sdp.split(Regex("\\r?\\n")).toMutableList()
-        var h264PayloadType = -1
-        
-        for (line in lines) {
-            if (line.startsWith("a=rtpmap:") && line.contains("H264")) {
-                val match = Regex("a=rtpmap:(\\d+) H264").find(line)
-                if (match != null) {
-                    h264PayloadType = match.groupValues[1].toInt()
-                    break
-                }
-            }
-        }
-        
-        if (h264PayloadType == -1) return sdp
-        
-        for (i in lines.indices) {
-            val line = lines[i]
-            if (line.startsWith("m=video ")) {
-                val parts = line.split(" ").toMutableList()
-                if (parts.size > 3) {
-                    val payloads = parts.subList(3, parts.size)
-                    val h264Str = h264PayloadType.toString()
-                    if (payloads.contains(h264Str)) {
-                        payloads.remove(h264Str)
-                        payloads.add(0, h264Str)
-                    }
-                    lines[i] = parts.subList(0, 3).joinToString(" ") + " " + payloads.joinToString(" ")
-                }
-            }
-        }
-        return lines.joinToString("\r\n")
     }
 
     companion object {

@@ -19,9 +19,13 @@ serve(async (req: Request) => {
     }
 
     const normalizedLang = normalizeLanguage(language);
-    const summary = typeof context.contextSummary === 'string' ? context.contextSummary : '';
+    const readingText = typeof req.readingText === 'string' && req.readingText
+      ? req.readingText
+      : (typeof context.readingText === 'string' && context.readingText
+        ? context.readingText
+        : (typeof context.contextSummary === 'string' ? context.contextSummary : ''));
 
-    if (!summary) {
+    if (!readingText) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -38,18 +42,37 @@ serve(async (req: Request) => {
       );
     }
 
-    const prompt = `You are VisionBridge AI assistant.
-Answer the user's follow-up question directly and concisely from the stored context.
+    const prompt = `You are VisionBridge AI accessibility assistant answering a follow-up question about text previously captured by VisionBridge Smart Reading.
 
-Stored context from user's active screen:
-"""${summary.slice(0, 1500)}"""
+Use the provided reading text as the primary and authoritative source for your answer.
 
-User question: "${question}"
+READING TEXT:
+"""${readingText.slice(0, 10000)}"""
+
+USER QUESTION:
+"${question}"
+
 ${languageInstruction(normalizedLang)}
+
+Instructions:
+- Answer the user's question directly in the very first sentence.
+- Use information from the reading text whenever available.
+- Do not merely acknowledge the question. NEVER say "I'll check", "Let me check", "I can help", "Checking", or similar phrases.
+- Do not pretend to perform another scan or ask the user to scan again.
+- Extract specific values, names, prices, dates, quantities, addresses, and phone numbers from the text when asked.
+- Perform simple reasoning/calculations over the reading text when needed:
+  * If asked for the cheapest or most expensive, compare the prices found in the text and name the item and price (e.g. "Veg Pasta is the cheapest at ₹220.").
+  * If asked for items under a certain price (e.g. "under 200 rupees"), list all matching items with their prices.
+  * If asked for options or all items in a category (e.g. "what are the pasta options"), list them clearly with prices.
+  * If asked if an item exists (e.g. "does this menu have pasta"), answer "Yes" with the items or "I don't see [item] in the captured text."
+  * If asked how many items, count them.
+- If the requested item or information is not present in the reading text, clearly state that it is not present in the captured text (e.g. "I don't see sushi in the menu text I captured."). Never invent or fabricate prices or facts.
+- Preserve currency symbols and numeric amounts exactly as written (e.g. ₹250, $12.50).
+- Keep the answer concise (1-2 sentences) and natural for text-to-speech output.
 
 Return JSON ONLY:
 {
-  "answer": "Concise spoken answer to the question",
+  "answer": "Direct concise spoken answer to the question",
   "confidence": 0.95
 }`;
 
@@ -59,7 +82,7 @@ Return JSON ONLY:
       maxOutputTokens: 300,
     });
 
-    const answer = String(parsed?.answer || 'I could not find the answer in the current view.');
+    const answer = String(parsed?.answer || 'I could not find the answer in the captured text.');
     const confidence = Number(parsed?.confidence ?? 0.85);
 
     return new Response(

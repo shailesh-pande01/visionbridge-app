@@ -52,7 +52,7 @@ class VolunteerApi(private val context: Context) {
     }
 
     fun getRequests(): ApiResult<List<HelpRequest>> {
-        val query = "help_requests?select=*&order=created_at.desc"
+        val query = "help_requests?status=in.(PENDING,searching)&order=created_at.desc"
         return when (val res = supabaseClient.restGet(query)) {
             is ApiResult.Failure -> res
             is ApiResult.Success -> {

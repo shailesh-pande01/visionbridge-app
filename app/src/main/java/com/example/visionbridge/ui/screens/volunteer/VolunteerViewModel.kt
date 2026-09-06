@@ -114,14 +114,44 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
         signalingClient = signaling
 
         viewModelScope.launch {
+            // 1. Start camera and microphone tracks so peer connection is ready before signaling connects
+            manager.startCall(object : WebRtcCallManager.CallEvents {
+                override fun onIceCandidate(candidate: IceCandidate) {
+                    signaling.sendIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp)
+                }
+
+                override fun onRemoteStreamAdded(mediaStream: MediaStream) {
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Remote media stream added (Volunteer audio received)")
+                }
+
+                override fun onCallConnected() {
+                    Log.i(TAG, "[VOLUNTEER_CALL] WebRTC PeerConnection fully connected with volunteer!")
+                    stopStatusPolling()
+                    val req = activeRequest ?: request
+                    _callState.value = VolunteerCallState.Connected(req, isMuted)
+                    viewModelScope.launch(Dispatchers.IO) {
+                        volunteerApi.startCallLog(req.id)
+                    }
+                }
+
+                override fun onCallDisconnected() {
+                    Log.i(TAG, "[VOLUNTEER_CALL] WebRTC call disconnected")
+                    val cur = _callState.value
+                    if (cur is VolunteerCallState.Connected || cur is VolunteerCallState.Connecting) {
+                        endCall(isLocal = false)
+                    }
+                }
+            })
+
+            // 2. Connect signaling and await volunteer offer
             val token = sessionManager.token
             signaling.connect(request.id, object : WebRtcSignalingClient.SignalingListener {
                 override fun onConnected() {
-                    Log.i(TAG, "Socket.IO signaling connected to room ${request.id}")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Signaling connected to room ${request.id}")
                 }
 
                 override fun onRequestAccepted(request: HelpRequest) {
-                    Log.i(TAG, "Received onRequestAccepted event: ${request.id}, Volunteer=${request.volunteerName}")
+                    Log.i(TAG, "[VOLUNTEER_CALL] Received onRequestAccepted event: ${request.id}, Volunteer=${request.volunteerName}")
                     activeRequest = request
                     val cur = _callState.value
                     if (cur is VolunteerCallState.SearchingVolunteer || cur is VolunteerCallState.LocatingAndBroadcasting) {
@@ -130,7 +160,7 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
                 }
 
                 override fun onRequestUpdated(request: HelpRequest) {
-                    Log.i(TAG, "Received onRequestUpdated event: ${request.id}, Status=${request.status}")
+                    Log.i(TAG, "[VOLUNTEER_CALL] Received onRequestUpdated event: ${request.id}, Status=${request.status}")
                     activeRequest = request
                     val status = request.status.uppercase()
                     when (status) {
@@ -154,85 +184,56 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
                     }
                 }
 
-                override fun onRequestCancelled() {
-                    Log.i(TAG, "Received onRequestCancelled event")
+                override fun onRequestCancelled(request: HelpRequest?) {
+                    Log.i(TAG, "[VOLUNTEER_CALL] Received onRequestCancelled event")
                     cleanup()
                     _callState.value = VolunteerCallState.Completed("Help request cancelled.")
                 }
 
-                override fun onRequestCompleted() {
-                    Log.i(TAG, "Received onRequestCompleted event")
+                override fun onRequestCompleted(request: HelpRequest?) {
+                    Log.i(TAG, "[VOLUNTEER_CALL] Received onRequestCompleted event")
                     cleanup()
                     _callState.value = VolunteerCallState.Completed("Assistance session finished.")
                 }
 
-                override fun onRequestRejected() {
-                    Log.i(TAG, "Received onRequestRejected event")
+                override fun onRequestRejected(request: HelpRequest?) {
+                    Log.i(TAG, "[VOLUNTEER_CALL] Received onRequestRejected event")
                     cleanup()
                     _callState.value = VolunteerCallState.Failed("No volunteer available right now. Please try again.")
                 }
 
                 override fun onOfferReceived(sdp: String, type: String) {
-                    Log.i(TAG, "Received WebRTC offer from volunteer. Setting remote description and creating answer.")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Received WebRTC offer from volunteer. Setting remote description and creating answer.")
                     val req = activeRequest ?: request
                     _callState.value = VolunteerCallState.Connecting(req, req.volunteerName)
                     
                     manager.setRemoteDescription(sdp, SessionDescription.Type.OFFER) {
                         manager.createAnswer { answer ->
-                            Log.i(TAG, "Created WebRTC answer. Sending to volunteer.")
+                            Log.i(TAG, "[WEBRTC_CONNECTION] Created WebRTC answer. Sending to volunteer.")
                             signaling.sendAnswer(answer.description)
                         }
                     }
                 }
 
                 override fun onAnswerReceived(sdp: String, type: String) {
-                    Log.i(TAG, "Received WebRTC answer from peer")
+                    Log.i(TAG, "[WEBRTC_CONNECTION] Received WebRTC answer from peer")
                     manager.setRemoteDescription(sdp, SessionDescription.Type.ANSWER)
                 }
 
                 override fun onIceCandidateReceived(sdpMid: String, sdpMLineIndex: Int, candidate: String) {
-                    Log.d(TAG, "Received ICE candidate from volunteer: $sdpMid ($sdpMLineIndex)")
+                    Log.d(TAG, "[WEBRTC_CONNECTION] Received ICE candidate from volunteer: $sdpMid ($sdpMLineIndex)")
                     manager.addIceCandidate(IceCandidate(sdpMid, sdpMLineIndex, candidate))
                 }
 
                 override fun onCallEnded() {
-                    Log.i(TAG, "Volunteer ended the call")
+                    Log.i(TAG, "[VOLUNTEER_CALL] Volunteer ended the call")
                     endCall(isLocal = false)
                 }
 
                 override fun onDisconnected() {
-                    Log.w(TAG, "Signaling socket disconnected")
+                    Log.w(TAG, "[WEBRTC_CONNECTION] Signaling socket disconnected")
                 }
             }, authToken = token)
-
-            // Start camera and microphone tracks so peer connection is ready to answer
-            manager.startCall(object : WebRtcCallManager.CallEvents {
-                override fun onIceCandidate(candidate: IceCandidate) {
-                    signaling.sendIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp)
-                }
-
-                override fun onRemoteStreamAdded(mediaStream: MediaStream) {
-                    Log.i(TAG, "Remote media stream added (Volunteer audio received)")
-                }
-
-                override fun onCallConnected() {
-                    Log.i(TAG, "WebRTC PeerConnection fully connected with volunteer!")
-                    stopStatusPolling()
-                    val req = activeRequest ?: request
-                    _callState.value = VolunteerCallState.Connected(req, isMuted)
-                    viewModelScope.launch(Dispatchers.IO) {
-                        volunteerApi.startCallLog(req.id)
-                    }
-                }
-
-                override fun onCallDisconnected() {
-                    Log.i(TAG, "WebRTC call disconnected")
-                    val cur = _callState.value
-                    if (cur is VolunteerCallState.Connected || cur is VolunteerCallState.Connecting) {
-                        endCall(isLocal = false)
-                    }
-                }
-            })
         }
     }
 
@@ -313,9 +314,12 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
     fun endCall(isLocal: Boolean = true) {
         val req = activeRequest
         stopStatusPolling()
-        if (req != null && isLocal) {
-            signalingClient?.sendCallEnded()
+        if (req != null) {
+            if (isLocal) {
+                signalingClient?.sendCallEnded()
+            }
             viewModelScope.launch(Dispatchers.IO) {
+                volunteerApi.completeRequest(req.id)
                 volunteerApi.endCallLog(req.id, "COMPLETED")
             }
         }

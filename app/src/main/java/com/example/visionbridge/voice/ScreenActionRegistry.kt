@@ -16,20 +16,23 @@ object ScreenActionRegistry {
     private var cancelHandler: (() -> Unit)? = null
     private var findObjectHandler: ((String) -> Unit)? = null
     private var submitHandler: (() -> Unit)? = null
+    private var replayHandler: (() -> Unit)? = null
 
     fun registerScreen(
         screenId: String,
         onCapture: (() -> Unit)? = null,
         onCancel: (() -> Unit)? = null,
         onFindObject: ((String) -> Unit)? = null,
-        onSubmit: (() -> Unit)? = null
+        onSubmit: (() -> Unit)? = null,
+        onReplay: (() -> Unit)? = null
     ) {
         activeScreen = screenId
         captureHandler = onCapture
         cancelHandler = onCancel
         findObjectHandler = onFindObject
         submitHandler = onSubmit
-        Log.d(TAG, "Screen registered: $screenId (canCapture=${onCapture != null})")
+        replayHandler = onReplay
+        Log.d(TAG, "Screen registered: $screenId (canCapture=${onCapture != null}, canReplay=${onReplay != null})")
     }
 
     fun unregisterScreen(screenId: String) {
@@ -38,7 +41,9 @@ object ScreenActionRegistry {
             cancelHandler = null
             findObjectHandler = null
             submitHandler = null
-            Log.d(TAG, "Screen unregistered: $screenId")
+            replayHandler = null
+            activeScreen = "home"
+            Log.d(TAG, "Screen unregistered: $screenId, activeScreen reset to home")
         }
     }
 
@@ -78,6 +83,18 @@ object ScreenActionRegistry {
 
     fun executeSubmit(): Boolean {
         val handler = submitHandler
+        return if (handler != null) {
+            handler.invoke()
+            true
+        } else {
+            false
+        }
+    }
+
+    fun canReplay(): Boolean = replayHandler != null
+
+    fun executeReplay(): Boolean {
+        val handler = replayHandler
         return if (handler != null) {
             handler.invoke()
             true

@@ -263,11 +263,19 @@ fun SmartReadingScreen(
         )
     }
 
+    val currentUiState by androidx.compose.runtime.rememberUpdatedState(uiState)
+
     DisposableEffect(Unit) {
         ScreenActionRegistry.registerScreen(
             screenId = "reading",
             onCapture = { capture() },
-            onCancel = { onBack() }
+            onCancel = { onBack() },
+            onReplay = {
+                val res = currentUiState as? ReadingUiState.Result
+                if (res != null) {
+                    tts.speak(res.text)
+                }
+            }
         )
         onDispose {
             ScreenActionRegistry.unregisterScreen("reading")

@@ -46,6 +46,7 @@ fun VolunteerDashboardScreen(
     val currentUser by sessionManager.currentUser.collectAsStateWithLifecycle()
     val dashboardState by viewModel.dashboardState.collectAsStateWithLifecycle()
     val remoteStream by viewModel.remoteMediaStream.collectAsStateWithLifecycle()
+    val remoteVideoTrack by viewModel.remoteVideoTrack.collectAsStateWithLifecycle()
 
     var hasAudioPermission by remember {
         mutableStateOf(
@@ -217,17 +218,18 @@ fun VolunteerDashboardScreen(
                                             init(callManager.eglBase.eglBaseContext, null)
                                             setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
                                             setEnableHardwareScaler(true)
-                                            val videoTrack = remoteStream?.videoTracks?.firstOrNull()
-                                            videoTrack?.addSink(this)
+                                            setZOrderMediaOverlay(true)
+                                            val track = remoteVideoTrack ?: remoteStream?.videoTracks?.firstOrNull()
+                                            track?.addSink(this)
                                         }
                                     },
                                     update = { renderer ->
-                                        val videoTrack = remoteStream?.videoTracks?.firstOrNull()
-                                        videoTrack?.addSink(renderer)
+                                        val track = remoteVideoTrack ?: remoteStream?.videoTracks?.firstOrNull()
+                                        track?.addSink(renderer)
                                     },
                                     onRelease = { renderer ->
-                                        val videoTrack = remoteStream?.videoTracks?.firstOrNull()
-                                        videoTrack?.removeSink(renderer)
+                                        val track = remoteVideoTrack ?: remoteStream?.videoTracks?.firstOrNull()
+                                        track?.removeSink(renderer)
                                         renderer.release()
                                     },
                                     modifier = Modifier.fillMaxSize()

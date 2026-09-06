@@ -532,7 +532,7 @@ class VoiceManager private constructor(private val context: Context) {
         mainHandler.removeCallbacks(restartRunnable)
         destroyRecognizer()
 
-        val command = WakeWordMatcher.normalize(rawCommand)
+        val command = VoiceCommandNormalizer.normalize(rawCommand)
         if (command.isBlank()) {
             isBusy = false
             startAmbientListening()
@@ -546,37 +546,95 @@ class VoiceManager private constructor(private val context: Context) {
         )
 
         scope.launch {
-            Log.d("VB_VOICE_INTENT", "Dispatching command: '$command'")
+            Log.d("VB_VOICE_COMMAND", "Processing command: '$command' (raw: '$rawCommand')")
+            val activeScreen = ScreenActionRegistry.getActiveScreen()
+            val isReadingActive = activeScreen == "reading" || ContextMemoryManager.activeFeature == "reading"
+            val hasReadingSession = ContextMemoryManager.hasActiveReadingSession()
+            val langCode = SessionManager.getInstance(context).getLanguage()
 
-            // 1. Try local fast-path rules (deterministic, instant, offline-capable)
+            // 1. Check Smart Reading Replay request
+            val isReplayRequest = command.matches(Regex("^(?:repeat|repeat that|repeat it|read again|read it again|read that again|say that again|पुन्हा वाचा|दोबारा पढ़ो)$", RegexOption.IGNORE_CASE))
+            if (isReadingActive && isReplayRequest) {
+                if (ScreenActionRegistry.canReplay()) {
+                    Log.d("VB_VOICE_COMMAND", "Executing Smart Reading replay handler")
+                    ScreenActionRegistry.executeReplay()
+                    resumeListening()
+                    return@launch
+                } else {
+                    val session = ContextMemoryManager.getActiveReadingSession()
+                    if (session != null && session.extractedText.isNotBlank()) {
+                        Log.d("VB_VOICE_COMMAND", "Speaking active reading session text directly")
+                        speakThenResume(session.extractedText)
+                        return@launch
+                    }
+                }
+            }
+
+            // 2. Check Smart Reading Contextual Follow-up Q&A
+            val fastMatch = VoiceActionRouter.matchFastPath(command)
+            val isExplicitNavOrSos = fastMatch != null && (
+                    fastMatch.action == VoiceActions.OPEN_FEATURE ||
+                    fastMatch.action == VoiceActions.GO_HOME ||
+                    fastMatch.action == VoiceActions.EMERGENCY_SOS ||
+                    fastMatch.action == VoiceActions.START_VOLUNTEER_HELP ||
+                    fastMatch.action == VoiceActions.STOP_SPEAKING
+            )
+
+            if (hasReadingSession && !isExplicitNavOrSos && (isReadingActive || ContextMemoryManager.isFollowUpInquiry(command))) {
+                Log.d("VB_VOICE_COMMAND", "Routing follow-up inquiry to contextual Q&A: '$command'")
+                val apiRes = withContext(Dispatchers.IO) {
+                    assistantApi.askQuestion(command, langCode)
+                }
+                when (apiRes) {
+                    is com.example.visionbridge.api.ApiResult.Success -> {
+                        val action = apiRes.value
+                        val speech = action.speech?.ifBlank { action.answer } ?: "I couldn't find that in the text."
+                        Log.d("VB_VOICE_COMMAND", "Contextual Q&A answer: '$speech'")
+                        speakThenResume(speech)
+                        return@launch
+                    }
+                    is com.example.visionbridge.api.ApiResult.Failure -> {
+                        Log.e("VB_VOICE_COMMAND", "Contextual Q&A failed: ${apiRes.error.userMessage}")
+                        speakThenResume("I couldn't find that in the document.")
+                        return@launch
+                    }
+                }
+            }
+
+            // 3. Try local fast-path rules (deterministic, instant, offline-capable)
             var action = VoiceActionRouter.matchFastPath(command)
             if (action != null) {
-                Log.d("VB_VOICE_ROUTER", "Matched local fast path: action=${action.action}, target=${action.target}")
+                Log.d("VB_VOICE_COMMAND", "Matched local fast path: action=${action.action}, target=${action.target}, confidence=${action.confidence}")
             } else {
-                // 2. Intelligent fallback to Gemini Assistant
-                Log.d("VB_VOICE_GEMINI", "No local match found. Querying Gemini Assistant for: '$command'")
-                val langCode = SessionManager.getInstance(context).getLanguage()
+                // 4. Intelligent fallback to Gemini Assistant
+                Log.d("VB_VOICE_COMMAND", "No local match found. Querying Gemini Assistant for: '$command'")
                 val apiRes = withContext(Dispatchers.IO) {
                     assistantApi.sendCommand(command, langCode)
                 }
                 action = when (apiRes) {
                     is com.example.visionbridge.api.ApiResult.Success -> apiRes.value
                     is com.example.visionbridge.api.ApiResult.Failure -> {
-                        Log.e("VB_VOICE_GEMINI", "Gemini intent routing failed: ${apiRes.error.userMessage}")
+                        Log.e("VB_VOICE_COMMAND", "Gemini intent routing failed: ${apiRes.error.userMessage}")
                         AssistantAction(
                             action = VoiceActions.UNKNOWN,
-                            speech = "I couldn't understand that command right now. Please try again."
+                            speech = "I didn't quite understand. Do you want me to describe your surroundings, read text, or find an object?",
+                            type = "clarification",
+                            confidence = 0.0
                         )
                     }
                 }
             }
 
-            executeAction(command, action)
+            // 5. Strict Allowlist & Confidence Safety Check
+            val validatedAction = VoiceActionRouter.validateAction(action)
+            Log.d("VB_VOICE_COMMAND", "Validated action: action=${validatedAction.action}, target=${validatedAction.target}, confidence=${validatedAction.confidence}")
+
+            executeAction(command, validatedAction)
         }
     }
 
     private fun executeAction(command: String, action: AssistantAction) {
-        Log.d("VB_VOICE", "Executing Action: action=${action.action}, target=${action.target}, speech='${action.speech}'")
+        Log.d("VB_VOICE_COMMAND", "Executing Action: action=${action.action}, target=${action.target}, speech='${action.speech}'")
         val activeScreen = ScreenActionRegistry.getActiveScreen()
         val speechText = action.speech ?: ""
 
@@ -590,13 +648,29 @@ class VoiceManager private constructor(private val context: Context) {
 
         when (action.action) {
             VoiceActions.OPEN_FEATURE -> {
-                val route = VoiceActionRouter.routeForTarget(action.target, action.objectName)
+                val targetRoute = VoiceActionRouter.routeForTarget(action.target, action.objectName)
+                if (activeScreen == targetRoute) {
+                    Log.d("VB_VOICE_COMMAND", "Already on screen '$activeScreen'. Handling in-place without re-navigating.")
+                    if (targetRoute == "reading" || targetRoute == "surroundings" || targetRoute == "currency") {
+                        if (ScreenActionRegistry.canCapture()) {
+                            ScreenActionRegistry.executeCapture()
+                            speakThenResume(speechText.ifBlank { "Capturing." })
+                            return
+                        }
+                    }
+                    speakThenResume(speechText.ifBlank { "You are already here." })
+                    return
+                }
                 _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
-                navigationHandler?.invoke(route)
+                navigationHandler?.invoke(targetRoute)
                 speakThenResume(speechText.ifBlank { "Opening ${action.target}" })
             }
 
             VoiceActions.GO_HOME -> {
+                if (activeScreen == "home") {
+                    speakThenResume(speechText.ifBlank { "You are already on the home screen." })
+                    return
+                }
                 _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
                 navigationHandler?.invoke("home")
                 speakThenResume(speechText.ifBlank { "Going home." })
@@ -609,6 +683,10 @@ class VoiceManager private constructor(private val context: Context) {
             }
 
             VoiceActions.START_VOLUNTEER_HELP -> {
+                if (activeScreen == "volunteer") {
+                    speakThenResume(speechText.ifBlank { "Already connecting with a volunteer." })
+                    return
+                }
                 _voiceState.value = _voiceState.value.copy(status = VoiceStatus.NAVIGATING)
                 navigationHandler?.invoke("volunteer")
                 speakThenResume(speechText.ifBlank { "Connecting you with a volunteer." })
@@ -701,8 +779,22 @@ class VoiceManager private constructor(private val context: Context) {
             }
 
             VoiceActions.ASK_CONTEXTUAL_QUESTION -> {
-                Log.d("VB_VOICE_FOLLOWUP", "Answering contextual question with speech: '$speechText'")
-                speakThenResume(speechText.ifBlank { "I don't have that information from what I just captured." })
+                Log.d("VB_VOICE_FOLLOWUP", "Handling contextual question: speech='$speechText', question='${action.question}'")
+                if (com.example.visionbridge.api.AssistantApi.isAcknowledgment(speechText) || speechText.isBlank()) {
+                    scope.launch {
+                        val apiRes = withContext(Dispatchers.IO) {
+                            assistantApi.askQuestion(action.question ?: command, SessionManager.getInstance(context).getLanguage())
+                        }
+                        val finalAnswer = if (apiRes is com.example.visionbridge.api.ApiResult.Success) {
+                            apiRes.value.speech?.ifBlank { apiRes.value.answer } ?: "I don't have that information from what I just captured."
+                        } else {
+                            "I don't have that information from what I just captured."
+                        }
+                        speakThenResume(finalAnswer)
+                    }
+                } else {
+                    speakThenResume(speechText)
+                }
             }
 
             VoiceActions.RADIO_PAUSE -> {
@@ -822,8 +914,12 @@ class VoiceManager private constructor(private val context: Context) {
                 speakThenResume(speechText.ifBlank { "Opening your progress." })
             }
 
+            VoiceActions.UNKNOWN -> {
+                speakThenResume(speechText.ifBlank { "I didn't quite understand. Do you want me to describe your surroundings, read text, or find an object?" })
+            }
+
             else -> {
-                speakThenResume(speechText.ifBlank { "I didn't understand that command. Please try again." })
+                speakThenResume(speechText.ifBlank { "I didn't quite understand. Do you want me to describe your surroundings, read text, or find an object?" })
             }
         }
     }

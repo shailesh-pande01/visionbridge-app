@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.SessionDescription
+import org.webrtc.VideoTrack
 
 sealed interface VolunteerDashboardState {
     object Loading : VolunteerDashboardState
@@ -44,6 +45,9 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
     private val _remoteMediaStream = MutableStateFlow<MediaStream?>(null)
     val remoteMediaStream: StateFlow<MediaStream?> = _remoteMediaStream.asStateFlow()
 
+    private val _remoteVideoTrack = MutableStateFlow<VideoTrack?>(null)
+    val remoteVideoTrack: StateFlow<VideoTrack?> = _remoteVideoTrack.asStateFlow()
+
     private var dashboardSignalingClient: WebRtcSignalingClient? = null
 
     fun loadRequests() {
@@ -54,7 +58,11 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
             }
             when (result) {
                 is ApiResult.Success -> {
-                    _dashboardState.value = VolunteerDashboardState.RequestList(result.value)
+                    val pendingRequests = result.value.filter {
+                        it.status.equals("PENDING", ignoreCase = true) ||
+                        it.status.equals("searching", ignoreCase = true)
+                    }
+                    _dashboardState.value = VolunteerDashboardState.RequestList(pendingRequests)
                     setupDashboardRealtime()
                 }
                 is ApiResult.Failure -> {
@@ -74,11 +82,26 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
                 override fun onRequestAccepted(request: HelpRequest) {
                     updateRequestInList(request)
                 }
-                override fun onRequestCancelled() {
-                    loadRequests()
+                override fun onRequestCancelled(request: HelpRequest?) {
+                    if (request != null) {
+                        updateRequestInList(request)
+                    } else {
+                        loadRequests()
+                    }
                 }
-                override fun onRequestCompleted() {
-                    loadRequests()
+                override fun onRequestCompleted(request: HelpRequest?) {
+                    if (request != null) {
+                        updateRequestInList(request)
+                    } else {
+                        loadRequests()
+                    }
+                }
+                override fun onRequestRejected(request: HelpRequest?) {
+                    if (request != null) {
+                        updateRequestInList(request)
+                    } else {
+                        loadRequests()
+                    }
                 }
                 override fun onOfferReceived(sdp: String, type: String) {}
                 override fun onAnswerReceived(sdp: String, type: String) {}
@@ -93,14 +116,19 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
         if (currentState is VolunteerDashboardState.RequestList) {
             val currentList = currentState.requests.toMutableList()
             val index = currentList.indexOfFirst { it.id == request.id }
+            val isPending = request.status.equals("PENDING", ignoreCase = true) ||
+                    request.status.equals("searching", ignoreCase = true)
+
             if (index != -1) {
-                if (request.status != "PENDING") {
+                if (!isPending) {
                     currentList.removeAt(index)
+                    Log.i("VolunteerDashVM", "[VOLUNTEER_CALL] Removed non-pending request from list: ${request.id} (status=${request.status})")
                 } else {
                     currentList[index] = request
                 }
-            } else if (request.status == "PENDING") {
+            } else if (isPending) {
                 currentList.add(0, request)
+                Log.i("VolunteerDashVM", "[VOLUNTEER_CALL] Added new pending request to list: ${request.id}")
             }
             _dashboardState.value = VolunteerDashboardState.RequestList(currentList)
         }
@@ -137,10 +165,42 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
         val signaling = WebRtcSignalingClient()
         signalingClient = signaling
 
+        // 1. Initialize WebRTC PeerConnection, transceivers, and media pipeline FIRST
+        manager.startCall(object : WebRtcCallManager.CallEvents {
+            override fun onIceCandidate(candidate: IceCandidate) {
+                signaling.sendIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp)
+            }
+
+            override fun onRemoteVideoTrack(videoTrack: VideoTrack) {
+                Log.i("VolunteerDashVM", "[WEBRTC_VIDEO] Volunteer received remote VideoTrack: ${videoTrack.id()}")
+                _remoteVideoTrack.value = videoTrack
+            }
+
+            override fun onRemoteStreamAdded(mediaStream: MediaStream) {
+                Log.d("VolunteerDashVM", "[WEBRTC_CONNECTION] Remote media stream added: tracks=${mediaStream.videoTracks.size}")
+                _remoteMediaStream.value = mediaStream
+                val videoTrack = mediaStream.videoTracks.firstOrNull()
+                if (videoTrack != null) {
+                    _remoteVideoTrack.value = videoTrack
+                }
+            }
+
+            override fun onCallConnected() {
+                Log.i("VolunteerDashVM", "[VOLUNTEER_CALL] Volunteer call connected")
+                _dashboardState.value = VolunteerDashboardState.InCall(request, isMuted)
+            }
+
+            override fun onCallDisconnected() {
+                Log.i("VolunteerDashVM", "[VOLUNTEER_CALL] Volunteer call disconnected")
+                endCall(isLocal = false)
+            }
+        })
+
+        // 2. Connect signaling and negotiate WebRTC offer
         val token = sessionManager.token
         signaling.connect(request.id, object : WebRtcSignalingClient.SignalingListener {
             override fun onConnected() {
-                Log.d("VolunteerDashVM", "Signaling connected to room ${request.id}. Creating offer.")
+                Log.i("VolunteerDashVM", "[WEBRTC_CONNECTION] Signaling connected to room ${request.id}. Creating offer.")
                 manager.createOffer { offer ->
                     signaling.sendOffer(offer.description)
                 }
@@ -155,7 +215,7 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
             }
 
             override fun onAnswerReceived(sdp: String, type: String) {
-                Log.d("VolunteerDashVM", "Received answer from user device")
+                Log.i("VolunteerDashVM", "[WEBRTC_CONNECTION] Received answer from user device")
                 manager.setRemoteDescription(sdp, SessionDescription.Type.ANSWER)
             }
 
@@ -164,26 +224,7 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
             }
 
             override fun onCallEnded() {
-                endCall(isLocal = false)
-            }
-        })
-
-        manager.startCall(object : WebRtcCallManager.CallEvents {
-            override fun onIceCandidate(candidate: IceCandidate) {
-                signaling.sendIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp)
-            }
-
-            override fun onRemoteStreamAdded(mediaStream: MediaStream) {
-                Log.d("VolunteerDashVM", "Remote media stream added")
-                _remoteMediaStream.value = mediaStream
-            }
-
-            override fun onCallConnected() {
-                Log.d("VolunteerDashVM", "Volunteer call connected")
-                _dashboardState.value = VolunteerDashboardState.InCall(request, isMuted)
-            }
-
-            override fun onCallDisconnected() {
+                Log.i("VolunteerDashVM", "[VOLUNTEER_CALL] Remote peer ended the call")
                 endCall(isLocal = false)
             }
         })
@@ -202,14 +243,19 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
 
     fun endCall(isLocal: Boolean = true) {
         val req = activeRequest
-        if (req != null && isLocal) {
-            signalingClient?.sendCallEnded()
-            viewModelScope.launch(Dispatchers.IO) {
-                volunteerApi.completeRequest(req.id)
+        viewModelScope.launch {
+            if (req != null) {
+                if (isLocal) {
+                    signalingClient?.sendCallEnded()
+                }
+                withContext(Dispatchers.IO) {
+                    volunteerApi.completeRequest(req.id)
+                    volunteerApi.endCallLog(req.id, "COMPLETED")
+                }
             }
+            cleanup()
+            loadRequests()
         }
-        cleanup()
-        loadRequests()
     }
 
     private fun cleanup() {
@@ -220,8 +266,10 @@ class VolunteerDashboardViewModel(application: Application) : AndroidViewModel(a
             callManager = null
             signalingClient?.disconnect()
             signalingClient = null
+            _remoteVideoTrack.value = null
             _remoteMediaStream.value = null
             activeRequest = null
+            Log.d("VolunteerDashVM", "Cleanup complete")
         } catch (e: Exception) {
             Log.e("VolunteerDashVM", "Cleanup error", e)
         }

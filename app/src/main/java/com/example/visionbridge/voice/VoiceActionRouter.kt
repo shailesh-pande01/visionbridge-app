@@ -79,6 +79,7 @@ object VoiceFeatures {
     const val CALLING = "calling"
     const val NEWS = "news"
     const val HOME = "home"
+    const val HAZARD = "hazard"
 }
 
 object VoiceActionRouter {
@@ -158,7 +159,8 @@ object VoiceActionRouter {
         VoiceFeatures.VOICE_CALL,
         VoiceFeatures.CALLING,
         VoiceFeatures.NEWS,
-        VoiceFeatures.HOME
+        VoiceFeatures.HOME,
+        VoiceFeatures.HAZARD
     )
 
     private data class FastPathRule(
@@ -167,10 +169,10 @@ object VoiceActionRouter {
     )
 
     private val FAST_PATH_RULES = listOf(
-        // 1. Emergency SOS (Highest Priority)
+        // 1. Emergency SOS (Strict Safety-Critical High Priority)
         FastPathRule(
             Pattern.compile(
-                "\\b(emergency|s\\.?o\\.?s\\.?|i'?m in danger|im in danger|i am in danger|call for help now)\\b|^help me$|(इमरजेंसी|इमर्जेंसी|इमर्जन्सी|आपातकाल|आपत्काल|आपत्कालीन|एसओएस)|(मैं ख़तरे में हूँ|मैं खतरे में हूं|मी धोक्यात आहे)|^(बचाओ|मुझे बचाओ|वाचवा|मला वाचवा)$",
+                "\\b(emergency|s\\.?o\\.?s\\.?|i'?m in danger|im in danger|i am in danger|call for help now|send sos|trigger sos|call for emergency assistance|start emergency help|this is an emergency|send an emergency alert|emergency alert)\\b|(इमरजेंसी|इमर्जेंसी|इमर्जन्सी|आपातकाल|आपत्काल|आपत्कालीन|एसओएस)|(मैं ख़तरे में हूँ|मैं खतरे में हूं|मी धोक्यात आहे)|^(बचाओ|मुझे बचाओ|वाचवा|मला वाचवा)$",
                 Pattern.CASE_INSENSITIVE
             )
         ) {
@@ -180,6 +182,21 @@ object VoiceActionRouter {
                 speech = "Starting Emergency SOS countdown.",
                 type = "navigation",
                 confidence = 0.99
+            )
+        },
+
+        // 1b. Ambiguous Input Clarification (Safe fallback instead of executing SOS or previous screen)
+        FastPathRule(
+            Pattern.compile(
+                "^(?:help me|help|assist me|do something|can you assist me|i need something|i need help)$|^(?:मदद करो|मदद चाहिए|सहायता करो|मदत करा|मदत हवी आहे)$",
+                Pattern.CASE_INSENSITIVE
+            )
+        ) {
+            AssistantAction(
+                action = VoiceActions.UNKNOWN,
+                speech = "I didn't quite understand. Do you want me to describe your surroundings, read text, or find an object?",
+                type = "clarification",
+                confidence = 0.50
             )
         },
 
@@ -308,7 +325,7 @@ object VoiceActionRouter {
         // 10. AI Voice Call
         FastPathRule(
             Pattern.compile(
-                "\\b(start (a )?(voice |ai )?call|open (voice |ai )?call|voice call|ai call|ai voice call|call vision|call ai|talk to vision|talk to ai|let'?s talk|start (an? )?(ai )?voice chat|chat with ai)\\b|(वॉइस कॉल|एआई कॉल|एआई से बात करो|विज़न से बात करो|बातचीत शुरू करो)|(व्हॉईस कॉल|एआय कॉल|एआयशी बोला|व्हिजनशी बोला)",
+                "\\b(start (a )?(voice |ai )?call|open (voice |ai )?call|voice call|ai call|ai voice call|call vision|call ai|talk to vision|talk to ai|let'?s talk|start (an? )?(ai )?voice chat|chat with ai|talk with the ai|talk with vision|start talking to ai|open ai assistant|ai assistant)\\b|(वॉइस कॉल|एआई कॉल|एआई से बात करो|विज़न से बात करो|बातचीत शुरू करो|एआई असिस्टेंट)|(व्हॉईस कॉल|एआय कॉल|एआयशी बोला|व्हिजनशी बोला|एआय असिस्टंट)",
                 Pattern.CASE_INSENSITIVE
             )
         ) {
@@ -384,10 +401,10 @@ object VoiceActionRouter {
             )
         },
 
-        // 15. Surroundings / Camera Assistant (Expanded Variations)
+        // 15. Surroundings / Camera Assistant / Scene Understanding (Comprehensive Phrasing)
         FastPathRule(
             Pattern.compile(
-                "\\b(describe (my |the )?surroundings|what is around me|what'?s around me|tell me what is around me|tell me what'?s around me|what do you see|what do you see around me|describe this scene|what is in front of me|what'?s in front of me|look around|open camera assistant|camera assistant|surroundings)\\b|(मेरे आसपास क्या है|आसपास क्या है|आसपास देखो|सामने क्या है|सामने क्या दिख रहा है|दृश्य बताओ|क्या दिख रहा है|कैमरा असिस्टेंट)|(माझ्या आजूबाजूला काय आहे|आजूबाजूला काय आहे|समोर काय आहे|परिसर सांगा|कॅमेरा असिस्टंट|काय दिसत आहे)",
+                "\\b(describe (my |the )?surroundings|what is around me|what'?s around me|tell me what is around me|tell me what'?s around me|what do you see|what do you see around me|describe this scene|what is in front of me|what'?s in front of me|look around|open camera assistant|camera assistant|surroundings|open (the )?camera|start (the )?camera|turn on (the )?camera|open camera and describe what is in front of me|open the camera and describe what is in front of me|open the camera and help me understand what is in front of me|understand what is in front of me|help me understand what is in front of me|help me understand this view|what am i looking at|what'?s in this image|what is in this image|analyze this scene|tell me what is in front of me|i want to know what is in front of me|what objects are around me|tell me what objects are around me|i am looking at a room and i want you to tell me what objects are around me|can you please tell me what objects are around me|i am having trouble figuring out what i'?m looking at right now can you please use the camera and help me understand what is around me)\\b|(मेरे आसपास क्या है|आसपास क्या है|आसपास देखो|सामने क्या है|सामने क्या दिख रहा है|दृश्य बताओ|क्या दिख रहा है|कैमरा असिस्टेंट|कैमरा खोलो|कैमरा शुरू करो|कैमरा चालू करो|सामने क्या है बताओ|मेरे आसपास क्या है बताओ|दृश्य का वर्णन करो)|(माझ्या आजूबाजूला काय आहे|आजूबाजूला काय आहे|समोर काय आहे|परिसर सांगा|कॅमेरा असिस्टंट|काय दिसत आहे|कॅमेरा उघडा|कॅमेरा सुरू करा|कॅमेरा चालू करा|समोर काय आहे सांगा|माझ्या आजूबाजूला काय आहे सांगा)",
                 Pattern.CASE_INSENSITIVE
             )
         ) {
@@ -400,10 +417,26 @@ object VoiceActionRouter {
             )
         },
 
+        // 15b. Hazard Detection (Safety obstacle detection mapped to surroundings)
+        FastPathRule(
+            Pattern.compile(
+                "\\b(check for hazards|check hazards|are there any dangers|is it safe to move forward|is it safe to walk|look for obstacles|check if there is anything dangerous|check my surroundings for hazards|are there obstacles ahead|warn me of hazards|scan for dangers|hazard detection|detect hazards|hazards)\\b|(खतरा जांचो|खतरे की जांच करो|क्या कोई खतरा है|क्या आगे जाना सुरक्षित है|रुकावटें देखो|खतरा देखो|खतरों की जांच)|(धोका तपासा|काही धोका आहे का|पुढे जाणे सुरक्षित आहे का|अडथळे तपासा|धोके तपासा)",
+                Pattern.CASE_INSENSITIVE
+            )
+        ) {
+            AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = VoiceFeatures.SURROUNDINGS,
+                speech = "Checking surroundings for hazards and obstacles.",
+                type = "navigation",
+                confidence = 0.97
+            )
+        },
+
         // 16. Currency Reader (Expanded Variations)
         FastPathRule(
             Pattern.compile(
-                "\\b(read (the |this |my )?money|count (this |the |my )?currency|count (this |the |my )?money|count (the |this |my )?cash|how much money( is this)?|how much currency( is this)?|how much cash( is this)?|currency reader|open currency reader|currency assistant|read currency|count notes|identify notes|currency)\\b|(पैसे गिनो|रुपये गिनो|पैसे पढ़ो|करेंसी रीडर|पैसे देखो|यह कितने पैसे हैं|कितने रुपये हैं|नोट गिनो|कैश गिनो)|(पैसे मोजा|रुपये मोजा|पैसे वाचा|करन्सी रीडर|पैसे बघा|हे किती पैसे आहेत|किती रुपये आहेत|नोट मोजा|कॅश मोजा)",
+                "\\b(read (the |this |my )?money|count (this |the |my )?currency|count (this |the |my )?money|count (the |this |my )?cash|how much money( is this)?|how much currency( is this)?|how much cash( is this)?|currency reader|open currency reader|currency assistant|read currency|count notes|identify notes|identify this currency|identify this money|what note is this|tell me the value of this note|recognize this currency|check this banknote|currency)\\b|(पैसे गिनो|रुपये गिनो|पैसे पढ़ो|करेंसी रीडर|पैसे देखो|यह कितने पैसे हैं|कितने रुपये हैं|नोट गिनो|कैश गिनो|करेंसी पहचानो|नोट पहचानो)|(पैसे मोजा|रुपये मोजा|पैसे वाचा|करन्सी रीडर|पैसे बघा|हे किती पैसे आहेत|किती रुपये आहेत|नोट मोजा|कॅश मोजा|करन्सी ओळखा)",
                 Pattern.CASE_INSENSITIVE
             )
         ) {
@@ -419,7 +452,7 @@ object VoiceActionRouter {
         // 17. Smart Reading Assistant (Extensively Expanded Variations)
         FastPathRule(
             Pattern.compile(
-                "\\b(read this( menu)?|read the (menu|text|document|sign|page|book|label|paper)|read this text|read what'?s written( here)?|read what is written( here)?|read the text|read this for me|can you read this|read the page|read this document|what does this say|tell me what'?s written( here)?|tell me what is written( here)?|open reading assistant|reading assistant|start reading|open reading|read text|reading)\\b|(यह मेन्यू पढ़ो|यह पढ़ो|मेन्यू पढ़ो|रीडिंग असिस्टेंट|पढ़ना शुरू करो|क्या लिखा है|यहाँ क्या लिखा है|यह क्या लिखा है|इसे पढ़ो|पढ़कर बताओ|किताब पढ़ो|दस्तावेज पढ़ो|टेक्स्ट पढ़ो)|(हा मेन्यू वाच|हे वाच|रीडिंग असिस्टंट|वाचायला सुरू करा|काय लिहिलं आहे|हे काय लिहिलं आहे|वाचून दाखवा|पुस्तक वाच|मजकूर वाच)",
+                "\\b(read this( menu)?|read the (menu|text|document|sign|page|book|label|paper)|read this text|read what'?s written( here)?|read what is written( here)?|read the text|read this for me|can you read this|read the page|read this document|what does this say|tell me what'?s written( here)?|tell me what is written( here)?|open reading assistant|reading assistant|start reading|open reading|read text|reading|read document|read book|read sign|read label|scan this|scan this document|scan the text|scan text|capture and read the text|capture and read|read the writing in front of me|i want to read something|can you read whatever text is in front of the camera|could you please open the reading feature because i have a document in front of me and i want to know exactly what it says|open (the )?reading feature)\\b|(यह मेन्यू पढ़ो|यह पढ़ो|मेन्यू पढ़ो|रीडिंग असिस्टेंट|पढ़ना शुरू करो|क्या लिखा है|यहाँ क्या लिखा है|यह क्या लिखा है|इसे पढ़ो|पढ़कर बताओ|किताब पढ़ो|दस्तावेज पढ़ो|टेक्स्ट पढ़ो|लिखा हुआ पढ़ो|स्कैन करो|रीडिंग खोलो)|(हा मेन्यू वाच|हे वाच|रीडिंग असिस्टंट|वाचायला सुरू करा|काय लिहिलं आहे|हे काय लिहिलं आहे|वाचून दाखवा|पुस्तक वाच|मजकूर वाच|दस्तऐवज वाच|स्कॅन करा|रीडिंग उघडा)",
                 Pattern.CASE_INSENSITIVE
             )
         ) {
@@ -427,6 +460,22 @@ object VoiceActionRouter {
                 action = VoiceActions.OPEN_FEATURE,
                 target = VoiceFeatures.READING,
                 speech = "Opening Reading Assistant.",
+                type = "navigation",
+                confidence = 0.96
+            )
+        },
+
+        // 17b. Object Finder (Generic Open)
+        FastPathRule(
+            Pattern.compile(
+                "\\b(open (the )?object finder|start object finder|object finder assistant|object finder|find objects?|search for objects?|look for objects?|detect objects?)\\b|(ऑब्जेक्ट फाइंडर खोलो|ऑब्जेक्ट फाइंडर शुरू करो|ऑब्जेक्ट फाइंडर|सामान ढूंढो|चीज ढूंढो|चीजें ढूंढो)|(ऑब्जेक्ट फायंडर उघडा|ऑब्जेक्ट फायंडर सुरू करा|ऑब्जेक्ट फायंडर|वस्तू शोधा)",
+                Pattern.CASE_INSENSITIVE
+            )
+        ) {
+            AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = VoiceFeatures.OBJECT_FINDER,
+                speech = "Opening Object Finder.",
                 type = "navigation",
                 confidence = 0.96
             )
@@ -467,7 +516,7 @@ object VoiceActionRouter {
         // 20. Volunteer Help
         FastPathRule(
             Pattern.compile(
-                "\\b(call (a )?volunteer|connect( with)? volunteer|volunteer help|need human help|talk to volunteer|connect to person|human help|volunteer)\\b|(वॉलंटियर को कॉल करो|वॉलंटियर से जोड़ो|इंसान से बात करनी है|सहायक से बात करो)|(वॉलंटियरशी जोडा|वॉलंटियर मदत|मदतनीसाशी बोला)",
+                "\\b(call (a )?volunteer|connect( with| me to)? volunteer|volunteer help|need human help|talk to volunteer|connect to person|human help|volunteer|reach out to volunteer|help from volunteer|i need help from a volunteer|connect me to a volunteer|call a human|i want to talk to a person)\\b|(वॉलंटियर को कॉल करो|वॉलंटियर से जोड़ो|वॉलंटियर से बात करनी है|किसी वॉलंटियर को कॉल करो|इंसान से बात करनी है|सहायक से बात करो|किसी इंसान से बात कराओ|वॉलंटियर की मदद)|(वॉलंटियरशी जोडा|वॉलंटियर मदत|मदतनीसाशी बोला|वॉलंटियरशी बोलायचं आहे|वॉलंटियरला फोन करा)",
                 Pattern.CASE_INSENSITIVE
             )
         ) {
@@ -869,9 +918,9 @@ object VoiceActionRouter {
     )
 
     private val OBJECT_FINDER_PATTERNS = listOf(
-        Pattern.compile("^(?:find|locate|search for|where is|where are|help me find)\\s+(?:my|the|a)?\\s*(.+)$", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("^(.+)\\s+(?:ढूँढो|ढूंढो|खोजो|शोधा|कुठे आहे|कहाँ है)$", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("^(?:मेरी|मेरा|माझा|माझी|माझे)\\s+(.+)\\s+(?:ढूँढो|ढूंढो|खोजो|शोधा|कहाँ है|कुठे आहे)$", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("^(?:मेरी|मेरा|माझा|माझी|माझे)\\s+(.+)\\s+(?:ढूँढो|ढूंढो|खोजो|शोधा|कहाँ है|कुठे आहे)$", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("^(?:find|locate|search for|where is|where are|help me find|look for)\\s+(?:my|the|a)?\\s*(.+)$", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("^(.+)\\s+(?:ढूँढो|ढूंढो|खोजो|शोधा|कुठे आहे|कहाँ है)$", Pattern.CASE_INSENSITIVE)
     )
 
     private val STORY_PLAY_PATTERN = Pattern.compile(
@@ -886,16 +935,32 @@ object VoiceActionRouter {
 
     /**
      * Matches a command against local fast-path rules without making a network call.
+     * Uses a two-pass matching strategy:
+     * - Pass 1: matches directly on normalized transcript.
+     * - Pass 2: matches on transcript with conversational polite filler prefixes stripped.
      * Returns null if no fast path matched.
      */
     fun matchFastPath(command: String?): AssistantAction? {
         if (command.isNullOrBlank()) return null
 
-        val normalized = command.lowercase()
-            .replace(Regex("[.,!?;:।॥]"), " ")
-            .replace(Regex("\\s+"), " ")
-            .trim()
+        // Pass 1: direct normalized matching
+        val normalized = VoiceCommandNormalizer.normalize(command)
+        if (normalized.isNotBlank()) {
+            val action = executeMatch(normalized)
+            if (action != null) return action
+        }
 
+        // Pass 2: filler-stripped matching (e.g., "could you please read this page")
+        val stripped = VoiceCommandNormalizer.normalizeAndStripFillers(command)
+        if (stripped.isNotBlank() && stripped != normalized) {
+            val action = executeMatch(stripped)
+            if (action != null) return action
+        }
+
+        return null
+    }
+
+    private fun executeMatch(normalized: String): AssistantAction? {
         // 1. Check direct fast paths
         for (rule in FAST_PATH_RULES) {
             if (rule.pattern.matcher(normalized).find()) {
@@ -999,10 +1064,19 @@ object VoiceActionRouter {
             if (matcher.matches()) {
                 val rawObj = matcher.group(1)?.trim() ?: ""
                 val cleanObj = rawObj
-                    .replace(Regex("^(my|the|a|mera|meri|mere|majha|majhi|majhe)\\s+", RegexOption.IGNORE_CASE), "")
+                    .replace(Regex("^(?:my|the|a|mera|meri|mere|majha|majhi|majhe|मेरी|मेरा|मेरे|माझा|माझी|माझे)\\s+", RegexOption.IGNORE_CASE), "")
                     .trim()
 
                 if (cleanObj.isNotBlank() && cleanObj.length > 1) {
+                    if (cleanObj.equals("object", ignoreCase = true) || cleanObj.equals("objects", ignoreCase = true)) {
+                        return AssistantAction(
+                            action = VoiceActions.OPEN_FEATURE,
+                            target = VoiceFeatures.OBJECT_FINDER,
+                            speech = "Opening Object Finder.",
+                            type = "navigation",
+                            confidence = 0.96
+                        )
+                    }
                     return AssistantAction(
                         action = VoiceActions.FIND_OBJECT,
                         target = VoiceFeatures.OBJECT_FINDER,
@@ -1019,6 +1093,35 @@ object VoiceActionRouter {
     }
 
     /**
+     * Normalizes a feature target name by resolving common AI synonyms to canonical identifiers.
+     */
+    fun normalizeFeatureTarget(target: String?): String? {
+        if (target.isNullOrBlank()) return null
+        return when (target.trim().lowercase()) {
+            "surroundings", "camera", "vision", "hazard", "scene", "surroundings_camera" -> VoiceFeatures.SURROUNDINGS
+            "reading", "read", "text", "document", "ocr" -> VoiceFeatures.READING
+            "currency", "money", "cash", "notes" -> VoiceFeatures.CURRENCY
+            "transport", "bus", "transit", "train" -> VoiceFeatures.TRANSPORT
+            "objectfinder", "object_finder", "finder", "find_object" -> VoiceFeatures.OBJECT_FINDER
+            "location", "where_am_i", "gps" -> VoiceFeatures.LOCATION
+            "volunteer", "human_help", "call_volunteer" -> VoiceFeatures.VOLUNTEER
+            "emergency", "sos", "danger" -> VoiceFeatures.EMERGENCY
+            "entertainment", "entertainment_hub" -> VoiceFeatures.ENTERTAINMENT
+            "radio", "liveradio", "live_radio" -> VoiceFeatures.RADIO
+            "stories", "story" -> VoiceFeatures.STORIES
+            "games", "game", "trivia", "riddles" -> VoiceFeatures.GAMES
+            "dailychallenge", "daily_challenge" -> VoiceFeatures.DAILY_CHALLENGE
+            "progress", "score", "streak" -> VoiceFeatures.PROGRESS
+            "livevision", "live_vision", "realtime" -> VoiceFeatures.LIVE_VISION
+            "voicecall", "voice_call", "ai_call", "assistant", "ai" -> VoiceFeatures.VOICE_CALL
+            "calling", "phone", "dialer", "contacts" -> VoiceFeatures.CALLING
+            "news", "headlines" -> VoiceFeatures.NEWS
+            "home", "main_menu", "dashboard" -> VoiceFeatures.HOME
+            else -> if (ALLOWED_FEATURES.contains(target.trim())) target.trim() else null
+        }
+    }
+
+    /**
      * Validates that an action produced by Gemini is on the allowlist.
      */
     fun isAllowedAction(action: String?): Boolean {
@@ -1031,30 +1134,61 @@ object VoiceActionRouter {
      */
     fun isAllowedFeatureTarget(target: String?): Boolean {
         if (target.isNullOrBlank()) return false
-        return ALLOWED_FEATURES.contains(target.trim())
+        return ALLOWED_FEATURES.contains(target.trim()) || normalizeFeatureTarget(target) != null
     }
 
     /**
      * Sanitizes and validates an action object.
+     * Enforces the 0.70 confidence safety threshold and converts ambiguous or low-confidence
+     * predictions into clarification prompts.
      */
     fun validateAction(action: AssistantAction?): AssistantAction {
-        if (action == null) return AssistantAction(action = VoiceActions.UNKNOWN)
+        val clarificationPrompt = "I didn't quite understand. Do you want me to describe your surroundings, read text, or find an object?"
+        if (action == null) {
+            return AssistantAction(
+                action = VoiceActions.UNKNOWN,
+                speech = clarificationPrompt,
+                type = "clarification",
+                confidence = 0.0
+            )
+        }
+
+        val confidence = action.confidence ?: 1.0
+        if (confidence < 0.70) {
+            return AssistantAction(
+                action = VoiceActions.UNKNOWN,
+                speech = clarificationPrompt,
+                type = "clarification",
+                confidence = confidence
+            )
+        }
 
         val normalizedAction = action.action.trim().uppercase()
         if (!ALLOWED_ACTIONS.contains(normalizedAction)) {
-            return AssistantAction(action = VoiceActions.UNKNOWN, speech = action.speech)
+            return AssistantAction(
+                action = VoiceActions.UNKNOWN,
+                speech = clarificationPrompt,
+                type = "clarification",
+                confidence = confidence
+            )
         }
 
-        val target = action.target?.trim()
-        val validTarget = if (target != null && ALLOWED_FEATURES.contains(target)) target else null
+        val rawTarget = action.target?.trim()
+        val validTarget = normalizeFeatureTarget(rawTarget)
 
         if (normalizedAction == VoiceActions.OPEN_FEATURE && validTarget == null) {
-            return AssistantAction(action = VoiceActions.UNKNOWN, speech = action.speech)
+            return AssistantAction(
+                action = VoiceActions.UNKNOWN,
+                speech = clarificationPrompt,
+                type = "clarification",
+                confidence = confidence
+            )
         }
 
         return action.copy(
             action = normalizedAction,
-            target = validTarget
+            target = validTarget,
+            confidence = confidence
         )
     }
 
@@ -1062,27 +1196,28 @@ object VoiceActionRouter {
      * Maps feature target identifier to navigation route.
      */
     fun routeForTarget(target: String?, objectName: String? = null): String {
-        return when (target?.lowercase()) {
-            VoiceFeatures.READING.lowercase() -> "reading"
-            VoiceFeatures.SURROUNDINGS.lowercase() -> "surroundings"
-            VoiceFeatures.CURRENCY.lowercase() -> "currency"
-            VoiceFeatures.TRANSPORT.lowercase() -> "transport"
-            VoiceFeatures.OBJECT_FINDER.lowercase(), "finder" -> {
+        val normalized = normalizeFeatureTarget(target) ?: target?.lowercase()
+        return when (normalized) {
+            VoiceFeatures.READING -> "reading"
+            VoiceFeatures.SURROUNDINGS, VoiceFeatures.HAZARD -> "surroundings"
+            VoiceFeatures.CURRENCY -> "currency"
+            VoiceFeatures.TRANSPORT -> "transport"
+            VoiceFeatures.OBJECT_FINDER -> {
                 if (!objectName.isNullOrBlank()) "finder?target=$objectName" else "finder"
             }
-            VoiceFeatures.LOCATION.lowercase() -> "location"
-            VoiceFeatures.VOLUNTEER.lowercase() -> "volunteer"
-            VoiceFeatures.EMERGENCY.lowercase(), "sos" -> "sos"
-            VoiceFeatures.ENTERTAINMENT.lowercase() -> "entertainment"
-            VoiceFeatures.RADIO.lowercase(), VoiceFeatures.LIVE_RADIO.lowercase() -> "radio"
-            VoiceFeatures.STORIES.lowercase() -> "stories"
-            VoiceFeatures.GAMES.lowercase(), VoiceFeatures.DAILY_CHALLENGE.lowercase() -> "games"
-            VoiceFeatures.PROGRESS.lowercase() -> "progress"
-            VoiceFeatures.LIVE_VISION.lowercase(), "live_vision" -> "live_vision"
-            VoiceFeatures.VOICE_CALL.lowercase(), "voice_call" -> "voice_call"
-            VoiceFeatures.CALLING.lowercase(), "phone", "dialer" -> "calling"
-            VoiceFeatures.NEWS.lowercase(), "headlines" -> "news"
-            VoiceFeatures.HOME.lowercase() -> "home"
+            VoiceFeatures.LOCATION -> "location"
+            VoiceFeatures.VOLUNTEER -> "volunteer"
+            VoiceFeatures.EMERGENCY -> "sos"
+            VoiceFeatures.ENTERTAINMENT -> "entertainment"
+            VoiceFeatures.RADIO, VoiceFeatures.LIVE_RADIO -> "radio"
+            VoiceFeatures.STORIES -> "stories"
+            VoiceFeatures.GAMES, VoiceFeatures.DAILY_CHALLENGE -> "games"
+            VoiceFeatures.PROGRESS -> "progress"
+            VoiceFeatures.LIVE_VISION -> "live_vision"
+            VoiceFeatures.VOICE_CALL -> "voice_call"
+            VoiceFeatures.CALLING -> "calling"
+            VoiceFeatures.NEWS -> "news"
+            VoiceFeatures.HOME -> "home"
             else -> "home"
         }
     }
