@@ -352,9 +352,15 @@
 
     <!-- Confidence / Volunteer Handoff -->
     <string name="confidence_low_prompt">मैं पूरी निश्चितता से इसका उत्तर नहीं दे पा रहा हूँ।</string>
+    <string name="confidence_low_describe_speech">मैं पूरी निश्चितता से इसका विवरण नहीं दे पा रहा हूँ। क्या आप सहायता के लिए किसी वॉलंटियर से जुड़ना चाहते हैं?</string>
+    <string name="confidence_medium_qualifier">ध्यान दें: मुझे इस विवरण पर मध्यम विश्वास है।</string>
     <string name="confidence_ask_volunteer">क्या आप सहायता के लिए किसी वॉलंटियर से जुड़ना चाहते हैं?</string>
     <string name="confidence_connect_volunteer">🤝 वॉलंटियर से जुड़ें</string>
     <string name="confidence_try_again">📷 कैमरे से दोबारा प्रयास करें</string>
+    <string name="ai_fallback_badge">एआई फॉलबैक</string>
+    <string name="ai_fallback_hint_voice">जुड़ने के लिए “Vision, yes” कहें, या दोबारा प्रयास करने के लिए “Vision, no” कहें।</string>
+    <string name="ai_technical_failure_prompt">मैं इस समय दृश्य का विश्लेषण नहीं कर सका। आप दोबारा प्रयास कर सकते हैं या किसी वॉलंटियर से जुड़ सकते हैं।</string>
+
 
     <!-- VisionBridge Live & AI Voice Call -->
     <string name="feature_live_vision">VisionBridge Live</string>

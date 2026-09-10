@@ -1,5 +1,6 @@
 package com.example.visionbridge
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -330,7 +331,15 @@ fun VisionBridgeApp() {
                 composable("surroundings") {
                     SurroundingsScreen(
                         onBack = { navController.popBackStack() },
-                        onVolunteerHelp = { navController.navigate("volunteer") }
+                        onVolunteerHelp = { fallbackContext ->
+                            if (fallbackContext != null) {
+                                val type = "AI_FALLBACK"
+                                val desc = fallbackContext.toHelpDescription()
+                                navController.navigate("volunteer?type=${Uri.encode(type)}&desc=${Uri.encode(desc)}")
+                            } else {
+                                navController.navigate("volunteer")
+                            }
+                        }
                     )
                 }
 
@@ -385,6 +394,35 @@ fun VisionBridgeApp() {
                 }
 
                 // 8. Volunteer Help (Low-Vision user view)
+                composable(
+                    route = "volunteer?type={type}&desc={desc}",
+                    arguments = listOf(
+                        navArgument("type") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = "general"
+                        },
+                        navArgument("desc") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = "Need visual assistance"
+                        }
+                    )
+                ) { backStackEntry ->
+                    val type = backStackEntry.arguments?.getString("type") ?: "general"
+                    val desc = backStackEntry.arguments?.getString("desc") ?: "Need visual assistance"
+                    VolunteerHelpScreen(
+                        initialRequestType = type,
+                        initialDescription = desc,
+                        onBack = {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+                }
+
                 composable("volunteer") {
                     VolunteerHelpScreen(
                         onBack = {

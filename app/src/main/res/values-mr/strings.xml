@@ -352,9 +352,15 @@
 
     <!-- Confidence / Volunteer Handoff -->
     <string name="confidence_low_prompt">मी खात्रीपूर्वक याचे उत्तर देऊ शकत नाही.</string>
+    <string name="confidence_low_describe_speech">मी खात्रीपूर्वक याचे वर्णन करू शकत नाही. आपल्याला मदतीसाठी स्वयंसेवकाशी जोडायचे आहे का?</string>
+    <string name="confidence_medium_qualifier">टीप: मला या वर्णनाबद्दल मध्यम खात्री आहे.</string>
     <string name="confidence_ask_volunteer">आपल्याला मदतीसाठी स्वयंसेवकाशी जोडायचे आहे का?</string>
     <string name="confidence_connect_volunteer">🤝 स्वयंसेवकाशी जोडा</string>
     <string name="confidence_try_again">📷 कॅमेऱ्याने पुन्हा प्रयत्न करा</string>
+    <string name="ai_fallback_badge">एआय फॉलबॅक</string>
+    <string name="ai_fallback_hint_voice">जोडण्यासाठी “Vision, yes” म्हणा, किंवा पुन्हा प्रयत्न करण्यासाठी “Vision, no” म्हणा.</string>
+    <string name="ai_technical_failure_prompt">मी या वेळी दृश्याचे विश्लेषण करू शकलो नाही. आपण पुन्हा प्रयत्न करू शकता किंवा स्वयंसेवकाशी जोडू शकता.</string>
+
 
     <!-- VisionBridge Live & AI Voice Call -->
     <string name="feature_live_vision">VisionBridge Live</string>

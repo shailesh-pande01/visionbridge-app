@@ -51,7 +51,11 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
 
     private var isMuted = false
 
-    fun startHelpRequest(activityContext: android.content.Context, description: String = "Need visual assistance") {
+    fun startHelpRequest(
+        activityContext: android.content.Context,
+        description: String = "Need visual assistance",
+        requestType: String = "general"
+    ) {
         if (_callState.value is VolunteerCallState.LocatingAndBroadcasting ||
             _callState.value is VolunteerCallState.SearchingVolunteer ||
             _callState.value is VolunteerCallState.Accepted ||
@@ -73,13 +77,15 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
 
             val (lat, lng) = LocationHelper.getCurrentLocation(getApplication())
 
+            Log.i(TAG, "[HUMAN_HANDOFF] Initiating volunteer help request: type=$requestType, desc=$description")
             val result = withContext(Dispatchers.IO) {
                 volunteerApi.createRequest(
                     requester = userId,
                     requesterName = userName,
                     latitude = lat,
                     longitude = lng,
-                    helpDescription = description
+                    helpDescription = description,
+                    requestType = requestType
                 )
             }
 
@@ -87,7 +93,8 @@ class VolunteerViewModel(application: Application) : AndroidViewModel(applicatio
                 is ApiResult.Success -> {
                     val request = result.value
                     activeRequest = request
-                    Log.i(TAG, "Volunteer help request created successfully: ${request.id}, status=${request.status}")
+                    Log.i(TAG, "[VOLUNTEER_REQUEST] Volunteer help request created successfully: ${request.id}, status=${request.status}, type=${request.requestType}")
+
                     
                     if (request.status.equals("ACCEPTED", ignoreCase = true)) {
                         _callState.value = VolunteerCallState.Accepted(request, request.volunteerName)

@@ -352,9 +352,15 @@
 
     <!-- Confidence / Volunteer Handoff -->
     <string name="confidence_low_prompt">I\'m not confident enough to answer this accurately.</string>
+    <string name="confidence_low_describe_speech">I\'m not confident enough to describe this accurately. Would you like me to connect you with a volunteer?</string>
+    <string name="confidence_medium_qualifier">Note: I am moderately confident about this description.</string>
     <string name="confidence_ask_volunteer">Would you like to connect with a volunteer for assistance?</string>
     <string name="confidence_connect_volunteer">🤝 Connect with Volunteer</string>
     <string name="confidence_try_again">📷 Try Camera Again</string>
+    <string name="ai_fallback_badge">AI Fallback</string>
+    <string name="ai_fallback_hint_voice">Say “Vision, yes” to connect, or “Vision, no” to try again.</string>
+    <string name="ai_technical_failure_prompt">I couldn\'t analyze the scene right now. You can try again or connect with a volunteer.</string>
+
 
     <!-- VisionBridge Live & AI Voice Call -->
     <string name="feature_live_vision">VisionBridge Live</string>

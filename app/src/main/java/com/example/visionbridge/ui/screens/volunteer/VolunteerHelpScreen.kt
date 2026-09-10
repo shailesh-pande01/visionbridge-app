@@ -42,6 +42,8 @@ import androidx.activity.compose.BackHandler
 @Composable
 fun VolunteerHelpScreen(
     onBack: () -> Unit,
+    initialRequestType: String = "general",
+    initialDescription: String = "Need visual assistance",
     viewModel: VolunteerViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -75,7 +77,7 @@ fun VolunteerHelpScreen(
     ) { results ->
         hasPermissions = results.values.all { it }
         if (hasPermissions) {
-            viewModel.startHelpRequest(context)
+            viewModel.startHelpRequest(context, description = initialDescription, requestType = initialRequestType)
         }
     }
 
@@ -90,9 +92,10 @@ fun VolunteerHelpScreen(
                 )
             )
         } else {
-            viewModel.startHelpRequest(context)
+            viewModel.startHelpRequest(context, description = initialDescription, requestType = initialRequestType)
         }
     }
+
 
     DisposableEffect(Unit) {
         VoiceManager.getInstance(context).pauseForCall()
@@ -212,7 +215,29 @@ fun VolunteerHelpScreen(
                             lineHeight = 24.sp
                         )
 
+                        if (initialRequestType.equals("AI_FALLBACK", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Surface(
+                                color = AccentDim,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = "🤖 ", fontSize = 14.sp)
+                                    Text(
+                                        text = stringResource(R.string.ai_fallback_badge) + ": " + initialDescription,
+                                        color = Accent,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(48.dp))
+
 
                         Button(
                             onClick = {

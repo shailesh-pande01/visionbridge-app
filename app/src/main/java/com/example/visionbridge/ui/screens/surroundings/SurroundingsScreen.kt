@@ -46,6 +46,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.visionbridge.R
+import com.example.visionbridge.ai.ConfidenceLevel
+import com.example.visionbridge.ai.FallbackContext
 import com.example.visionbridge.data.ContextMemoryManager
 import com.example.visionbridge.data.SessionManager
 import com.example.visionbridge.ui.theme.*
@@ -61,7 +63,7 @@ import java.util.concurrent.Executors
 @Composable
 fun SurroundingsScreen(
     onBack: () -> Unit,
-    onVolunteerHelp: () -> Unit,
+    onVolunteerHelp: (FallbackContext?) -> Unit,
     viewModel: SurroundingsViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -189,12 +191,71 @@ fun SurroundingsScreen(
         )
     }
 
+    // Dynamic voice action routing based on current UI state
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is SurroundingsUiState.LowConfidence -> {
+                ScreenActionRegistry.registerScreen(
+                    screenId = "surroundings",
+                    onCapture = {
+                        tts.stop()
+                        viewModel.retryCapture()
+                        capture()
+                    },
+                    onSubmit = {
+                        tts.stop()
+                        onVolunteerHelp(state.fallbackContext)
+                    },
+                    onCancel = {
+                        tts.stop()
+                        viewModel.onFallbackDeclined()
+                    }
+                )
+            }
+            is SurroundingsUiState.Result -> {
+                ScreenActionRegistry.registerScreen(
+                    screenId = "surroundings",
+                    onCapture = {
+                        tts.stop()
+                        viewModel.reset()
+                    },
+                    onReplay = {
+                        tts.speak(state.speech)
+                    },
+                    onCancel = {
+                        tts.stop()
+                        onBack()
+                    }
+                )
+            }
+            is SurroundingsUiState.Failed -> {
+                ScreenActionRegistry.registerScreen(
+                    screenId = "surroundings",
+                    onCapture = {
+                        tts.stop()
+                        viewModel.retryCapture()
+                    },
+                    onSubmit = {
+                        tts.stop()
+                        onVolunteerHelp(null)
+                    },
+                    onCancel = {
+                        tts.stop()
+                        onBack()
+                    }
+                )
+            }
+            else -> {
+                ScreenActionRegistry.registerScreen(
+                    screenId = "surroundings",
+                    onCapture = { capture() },
+                    onCancel = { onBack() }
+                )
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
-        ScreenActionRegistry.registerScreen(
-            screenId = "surroundings",
-            onCapture = { capture() },
-            onCancel = { onBack() }
-        )
         onDispose {
             ScreenActionRegistry.unregisterScreen("surroundings")
             cameraProvider?.unbindAll()
@@ -203,15 +264,23 @@ fun SurroundingsScreen(
         }
     }
 
-    // TTS feedback
+    // Spoken TTS feedback corresponding to UI transitions
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is SurroundingsUiState.Processing -> {
                 tts.speak(context.getString(R.string.surroundings_processing_speech))
             }
+            is SurroundingsUiState.LowConfidence -> {
+                // Low confidence: explain uncertainty and proactively offer volunteer help
+                tts.speak(state.spokenPrompt)
+            }
             is SurroundingsUiState.Result -> {
                 ContextMemoryManager.setContext("surroundings", "scene description", state.analysis.description)
                 val fullSpeech = buildString {
+                    if (state.isQualified && state.confidenceLevel == ConfidenceLevel.MEDIUM) {
+                        append(context.getString(R.string.confidence_medium_qualifier))
+                        append(". ")
+                    }
                     append(state.analysis.scene)
                     append(". ")
                     append(state.analysis.description)
@@ -223,7 +292,12 @@ fun SurroundingsScreen(
                 tts.speak(fullSpeech)
             }
             is SurroundingsUiState.Failed -> {
-                tts.speak(state.message)
+                val errorSpeech = if (state.canOfferVolunteer) {
+                    context.getString(R.string.ai_technical_failure_prompt)
+                } else {
+                    state.message
+                }
+                tts.speak(errorSpeech)
             }
             else -> {}
         }
@@ -312,6 +386,83 @@ fun SurroundingsScreen(
                             }
                         }
 
+                        // STEP: LOW CONFIDENCE HANDOFF (AI Uncertainty detected)
+                        is SurroundingsUiState.LowConfidence -> {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(BgCard)
+                                    .padding(24.dp)
+                                    .verticalScroll(rememberScrollState())
+                                    .semantics { liveRegion = LiveRegionMode.Polite },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = "🤔", fontSize = 56.sp)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(R.string.confidence_low_prompt),
+                                    color = Accent,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.semantics { heading() }
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = stringResource(R.string.confidence_ask_volunteer),
+                                    color = TextPrimary,
+                                    fontSize = 19.sp,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 26.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(R.string.ai_fallback_hint_voice),
+                                    color = TextMuted,
+                                    fontSize = 15.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(32.dp))
+                                Button(
+                                    onClick = {
+                                        tts.stop()
+                                        onVolunteerHelp(state.fallbackContext)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Accent),
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 60.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.confidence_connect_volunteer),
+                                        color = BgPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 19.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = {
+                                        tts.stop()
+                                        viewModel.onFallbackDeclined()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary),
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 60.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.confidence_try_again),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 19.sp
+                                    )
+                                }
+                            }
+                        }
+
                         is SurroundingsUiState.Result -> {
                             Column(
                                 modifier = Modifier
@@ -352,12 +503,38 @@ fun SurroundingsScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
+                                // Medium Confidence Qualification Banner
+                                if (state.confidenceLevel == ConfidenceLevel.MEDIUM) {
+                                    Surface(
+                                        color = AccentDim,
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 16.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(14.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(text = "ℹ️", fontSize = 20.sp, modifier = Modifier.padding(end = 10.dp))
+                                            Text(
+                                                text = stringResource(R.string.confidence_medium_qualifier),
+                                                color = TextPrimary,
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+
                                 // Obstacles Warning (if any)
                                 if (state.analysis.obstacles.isNotEmpty()) {
                                     Surface(
                                         color = Emergency,
                                         shape = RoundedCornerShape(14.dp),
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 16.dp)
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Text(
@@ -410,8 +587,8 @@ fun SurroundingsScreen(
                                     }
                                 }
 
-                                // Low confidence volunteer handoff
-                                if (state.analysis.confidence < 0.7) {
+                                // Optional Volunteer Assistance Card (available for medium confidence / qualified results)
+                                if (state.fallbackContext != null) {
                                     Spacer(modifier = Modifier.height(20.dp))
                                     Surface(
                                         color = BgSecondary,
@@ -420,18 +597,28 @@ fun SurroundingsScreen(
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Text(
-                                                text = stringResource(R.string.confidence_low_prompt),
+                                                text = stringResource(R.string.confidence_ask_volunteer),
                                                 color = TextPrimary,
-                                                fontSize = 18.sp
+                                                fontSize = 17.sp
                                             )
                                             Spacer(modifier = Modifier.height(12.dp))
                                             Button(
-                                                onClick = onVolunteerHelp,
+                                                onClick = {
+                                                    tts.stop()
+                                                    onVolunteerHelp(state.fallbackContext)
+                                                },
                                                 colors = ButtonDefaults.buttonColors(containerColor = Accent),
                                                 shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .heightIn(min = 54.dp)
                                             ) {
-                                                Text(stringResource(R.string.confidence_connect_volunteer), color = BgPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                                Text(
+                                                    text = stringResource(R.string.confidence_connect_volunteer),
+                                                    color = BgPrimary,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 18.sp
+                                                )
                                             }
                                         }
                                     }
@@ -439,24 +626,66 @@ fun SurroundingsScreen(
                             }
                         }
 
+                        // STEP: TECHNICAL FAILURE
                         is SurroundingsUiState.Failed -> {
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(BgCard)
-                                    .padding(24.dp),
+                                    .padding(24.dp)
+                                    .verticalScroll(rememberScrollState())
+                                    .semantics { liveRegion = LiveRegionMode.Polite },
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(text = "⚠️", fontSize = 54.sp)
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = state.message,
+                                    text = stringResource(R.string.ai_technical_failure_prompt),
                                     color = Emergency,
-                                    fontSize = 22.sp,
+                                    fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
                                 )
+                                if (!state.technicalDetail.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = state.technicalDetail,
+                                        color = TextMuted,
+                                        fontSize = 13.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(28.dp))
+                                Button(
+                                    onClick = {
+                                        tts.stop()
+                                        viewModel.retryCapture()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 60.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Accent)
+                                ) {
+                                    Text(stringResource(R.string.common_retry), fontSize = 19.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
+                                }
+                                if (state.canOfferVolunteer) {
+                                    Spacer(modifier = Modifier.height(14.dp))
+                                    Button(
+                                        onClick = {
+                                            tts.stop()
+                                            onVolunteerHelp(null)
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 60.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
+                                    ) {
+                                        Text(stringResource(R.string.confidence_connect_volunteer), fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                         }
 
@@ -465,100 +694,97 @@ fun SurroundingsScreen(
                 }
             }
 
-            // Bottom Controls
-            Surface(
-                color = BgCard,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            // Bottom Controls (Visible during Camera, Processing, and Result states)
+            if (uiState is SurroundingsUiState.Camera || uiState is SurroundingsUiState.Result) {
+                Surface(
+                    color = BgCard,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
-                    when (val state = uiState) {
-                        is SurroundingsUiState.Camera -> {
-                            Box(
-                                modifier = Modifier
-                                    .size(96.dp)
-                                    .clip(CircleShape)
-                                    .background(Accent)
-                                    .clickable { capture() }
-                                    .semantics { contentDescription = "Capture image" },
-                                contentAlignment = Alignment.Center
-                            ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        when (val state = uiState) {
+                            is SurroundingsUiState.Camera -> {
                                 Box(
                                     modifier = Modifier
-                                        .size(76.dp)
+                                        .size(96.dp)
                                         .clip(CircleShape)
-                                        .background(BgPrimary),
+                                        .background(Accent)
+                                        .clickable { capture() }
+                                        .semantics { contentDescription = "Capture image" },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(68.dp)
+                                            .size(76.dp)
                                             .clip(CircleShape)
-                                            .background(Accent)
-                                    )
+                                            .background(BgPrimary),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(68.dp)
+                                                .clip(CircleShape)
+                                                .background(Accent)
+                                        )
+                                    }
                                 }
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = stringResource(R.string.camera_tap_to_capture),
+                                    color = TextPrimary,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = stringResource(R.string.camera_tap_to_capture),
-                                color = TextPrimary,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
 
-                        is SurroundingsUiState.Result -> {
-                            Button(
-                                onClick = {
-                                    tts.stop()
-                                    viewModel.reset()
-                                },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                            ) {
-                                Text(stringResource(R.string.camera_scan_again), fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
+                            is SurroundingsUiState.Result -> {
                                 Button(
-                                    onClick = { tts.speak(state.speech) },
-                                    modifier = Modifier.weight(1f).heightIn(min = 54.dp),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
+                                    onClick = {
+                                        tts.stop()
+                                        viewModel.reset()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 64.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Accent)
                                 ) {
-                                    Text("🔊 " + stringResource(R.string.common_replay), fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.camera_scan_again), fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
                                 }
-                                Button(
-                                    onClick = { tts.stop() },
-                                    enabled = isSpeaking,
-                                    modifier = Modifier.weight(1f).heightIn(min = 54.dp),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Text("⏹ " + stringResource(R.string.common_stop), fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                    Button(
+                                        onClick = { tts.speak(state.speech) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .heightIn(min = 54.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
+                                    ) {
+                                        Text("🔊 " + stringResource(R.string.common_replay), fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Button(
+                                        onClick = { tts.stop() },
+                                        enabled = isSpeaking,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .heightIn(min = 54.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = BgSecondary, contentColor = TextPrimary)
+                                    ) {
+                                        Text("⏹ " + stringResource(R.string.common_stop), fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
-                        }
 
-                        is SurroundingsUiState.Failed -> {
-                            Button(
-                                onClick = { viewModel.reset() },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                            ) {
-                                Text(stringResource(R.string.common_retry), fontSize = 20.sp, color = BgPrimary, fontWeight = FontWeight.Bold)
-                            }
+                            else -> {}
                         }
-
-                        else -> {}
                     }
                 }
             }
