@@ -80,6 +80,7 @@ object VoiceFeatures {
     const val NEWS = "news"
     const val HOME = "home"
     const val HAZARD = "hazard"
+    const val MEDICATION = "medication"
 }
 
 object VoiceActionRouter {
@@ -160,7 +161,8 @@ object VoiceActionRouter {
         VoiceFeatures.CALLING,
         VoiceFeatures.NEWS,
         VoiceFeatures.HOME,
-        VoiceFeatures.HAZARD
+        VoiceFeatures.HAZARD,
+        VoiceFeatures.MEDICATION
     )
 
     private data class FastPathRule(
@@ -302,6 +304,22 @@ object VoiceActionRouter {
                 action = VoiceActions.REPEAT_LAST,
                 speech = "",
                 type = "action",
+                confidence = 0.96
+            )
+        },
+
+        // 8b. Medication Safety Mode (AAVISHKAR Research Feature)
+        FastPathRule(
+            Pattern.compile(
+                "\\b(check (my )?medicine|read (my )?medicine|identify (this )?medicine|medicine mode|medication safety|medication mode|open medication|open medicine|scan (my )?medicine|check medicine|read medicine|medication|medicine)\\b|(दवा जांचो|दवाई पढ़ो|दवा की पहचान करो|मेडिसिन मोड|दवाई चेक करो|मेरी दवा चेक करो|दवा मोड|दवाई मोड|दवा सुरक्षा)|(औषध तपासा|औषध वाचा|औषध ओळखा|मेडिसिन मोड|माझे औषध तपासा|औषध मोड|औषध सुरक्षा)",
+                Pattern.CASE_INSENSITIVE
+            )
+        ) {
+            AssistantAction(
+                action = VoiceActions.OPEN_FEATURE,
+                target = VoiceFeatures.MEDICATION,
+                speech = "Opening Medication Safety.",
+                type = "navigation",
                 confidence = 0.96
             )
         },
@@ -1117,6 +1135,7 @@ object VoiceActionRouter {
             "calling", "phone", "dialer", "contacts" -> VoiceFeatures.CALLING
             "news", "headlines" -> VoiceFeatures.NEWS
             "home", "main_menu", "dashboard" -> VoiceFeatures.HOME
+            "medication", "medicine", "medsafe", "medication_safety", "meds", "pill", "pills", "dawa", "dawakhana", "aushadh", "golya", "goli" -> VoiceFeatures.MEDICATION
             else -> if (ALLOWED_FEATURES.contains(target.trim())) target.trim() else null
         }
     }
@@ -1218,6 +1237,7 @@ object VoiceActionRouter {
             VoiceFeatures.CALLING -> "calling"
             VoiceFeatures.NEWS -> "news"
             VoiceFeatures.HOME -> "home"
+            VoiceFeatures.MEDICATION -> "medication"
             else -> "home"
         }
     }

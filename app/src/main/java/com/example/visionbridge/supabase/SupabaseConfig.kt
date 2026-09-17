@@ -61,4 +61,5 @@ object SupabaseConfig {
     const val FUNCTION_GAMES_TWENTY_QUESTIONS = "games-twenty-questions"
     const val FUNCTION_GAMES_EVALUATE = "games-evaluate"
     const val FUNCTION_NEWS_BRIEFING = "news-briefing"
+    const val FUNCTION_MEDICATION_EXTRACT = "medication-extract"
 }

@@ -275,6 +275,15 @@ fun HomeScreen(
                     onClick = { onNavigate("reading") }
                 )
 
+                // Medication Safety & Reminder Companion (AAVISHKAR 2026-2027)
+                ActionCard(
+                    icon = "💊",
+                    title = stringResource(R.string.feature_medsafe),
+                    subtitle = stringResource(R.string.feature_medsafe_sub),
+                    badgeText = "AAVISHKAR",
+                    onClick = { onNavigate("medication") }
+                )
+
                 // Surroundings (Scene description)
                 ActionCard(
                     icon = "📷",

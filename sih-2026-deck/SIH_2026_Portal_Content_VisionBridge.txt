@@ -1,0 +1,298 @@
+SIH 2026 PORTAL CONTENT – VISIONBRIDGE (TEAM PRIME INNOVATORS, TEAM ID 135775)
+Problem Statement ID 26198 · Student Innovation · MedTech / BioTech / HealthTech · Software
+Copy each block below into the matching portal field.
+
+==================================================
+A. IDEA TITLE
+==================================================
+
+VisionBridge with MedSafe: A Confidence-Aware Android Accessibility Companion for People with Low Vision
+
+(Shorter version, if the field has a tight character limit: VisionBridge with MedSafe: Confidence-Aware Accessibility Companion)
+
+==================================================
+B. IDEA DESCRIPTION
+==================================================
+
+VISIONBRIDGE WITH MEDSAFE
+A confidence-aware Android accessibility companion for people with low vision
+
+1. SUMMARY
+VisionBridge is a native Android app (Kotlin, Jetpack Compose) for people with low vision. It turns a phone they already own into one voice-first companion for five everyday jobs: READ printed text, UNDERSTAND what is around them, MOVE with more confidence, STAY SAFE, and GET HUMAN HELP. The user says "Vision…" in English, Hindi or Marathi, points the camera and hears the answer.
+
+The core design rule is honesty. Each photo-based answer comes with a confidence score. When the score is too low, the app says it is not sure instead of sounding certain, and in most assistants it offers a sighted volunteer on a live video call.
+
+The newest module, VisionBridge MedSafe, applies the strictest version of this rule to medicine packaging. MedSafe reads what is printed on a strip, box, bottle or label, such as the name, strength, printed directions, expiry date, storage information and printed warnings. It speaks this information and shows it in large, high-contrast cards. The user can save the medicine and set daily reminders that work offline. MedSafe shows a result only when all three conditions hold: the AI marked the reading as clear, it actually read the medicine name, and its confidence is at least 0.70.
+
+MedSafe is accessibility technology for printed packaging information. It does not diagnose, prescribe or give dosing advice, and it does not replace a doctor or pharmacist.
+
+2. THE PROBLEM
+For a person with low vision, a normal day contains many moments where important information is visual:
+- A medicine strip whose name, dose and expiry date are printed too small to read.
+- A bus arriving at the stop: which number is it, and where is it going?
+- A step, a parked vehicle or another obstacle on the footpath.
+- A banknote handed back at a shop counter.
+- "Where am I right now?"
+
+Today, most of these moments depend on another person being free to help, or on a separate device or app for each task. Waiting costs independence and time. Guessing costs safety.
+
+The cost of a wrong reading is highest with medicines. In a 2025 study, 92 sighted volunteers wore glasses that simulate visual impairment. Of the participants with simulated moderate impairment, 81% could not access medicine names and doses, and 75% could not access the full expiry date (Merenda, Depasse and Patris, Exploratory Research in Clinical and Social Pharmacy, 2025).
+
+The problem is large. The World Health Organization reports that at least 2.2 billion people worldwide have a near or distance vision impairment (fact sheet updated 10 February 2026). In India, the National Blindness and Visual Impairment Survey 2015–19 found visual impairment in 26.68% and blindness in 1.99% of people aged 50 and above (Vashist et al., PLOS ONE, 2022). Indian law recognises blindness and low vision as specified disabilities under the Rights of Persons with Disabilities Act, 2016.
+
+There is also a less visible problem: trust in AI. General AI apps answer confidently even when an image is blurred, dark or partly hidden. A person who cannot check the answer by looking is harmed more by a confident wrong answer than by no answer, especially when the answer is about a medicine.
+
+3. WHO IT IS FOR
+- Primary users: people with low vision or blindness who use an Android phone.
+- Families and caregivers, who today are often the ones asked to read things aloud.
+- Sighted volunteers, who help remotely through a separate volunteer dashboard.
+- Community organisations, through an admin dashboard that only admins can open.
+
+4. THE PROPOSED SOLUTION
+VisionBridge puts the assistants a person with low vision needs into one app with one voice interface.
+
+READ
+- Smart Reading reads printed text aloud, such as menus, notices, bills and labels.
+- MedSafe reads medicine packaging safely (see section 7).
+
+UNDERSTAND
+- Surroundings describes what is ahead, mentions obstacles first and reads visible signs.
+- Object Finder looks for a named item and gives its direction and approximate distance.
+- Currency Reader identifies notes and coins, counts them, and gives a total when the denominations are clear.
+- VisionBridge Live is a real-time camera-and-voice conversation with Gemini Live. The user does not have to take a new photo for each question and can interrupt the AI while it is speaking.
+- AI Voice Call is a hands-free, voice-only conversation with the assistant.
+
+MOVE
+- Where Am I? gives the GPS location, a readable address and nearby places.
+- Public Transport reads bus numbers, routes and destinations, and train and platform signs.
+- Obstacle check: saying "Vision, check for hazards" opens Surroundings, which mentions obstacles first.
+
+STAY SAFE
+- Emergency SOS starts a 5-second countdown that the user can cancel. It then sends a WhatsApp alert with a map link to the user's trusted contacts (when WhatsApp credentials are configured on the server) and records an emergency event.
+- Medicine reminders are daily alarms set from MedSafe, and they work without internet.
+
+GET HUMAN HELP
+- Volunteer Help sends a help request to volunteers. When one accepts, a live WebRTC video call starts. Only the user's camera is shared; the volunteer's camera stays off.
+- Phone Assistant opens the phone dialer when the user says a contact's name or a number, and keeps contacts and call history for quick access.
+
+The home screen also offers live radio, public-domain stories and audiobooks, and voice-controlled audio games.
+
+5. HOW VISIONBRIDGE WORKS
+Step 1. Input. The user starts in one of four ways: by saying "Vision…" followed by a request, by tapping a large card, by double-tapping with two fingers, or (if turned on) by shaking the phone. The app uses the camera and GPS when the task needs them.
+
+Step 2. On the phone. For common commands, 50 voice rules on the phone recognise English, Hindi and Marathi phrases directly. Other requests go to an AI command interpreter that can only choose from a fixed list of allowed actions. The app remembers the last reading or scene for 15 minutes, along with the last four conversation turns, so follow-up questions do not need a new photo.
+
+Step 3. Server. The phone resizes and compresses each image and sends it to Supabase Edge Functions; the app uses 20 of these serverless functions. The Gemini API key exists only as a server-side secret.
+
+Step 4. AI. Gemini returns its answer as structured data (JSON) with a confidence score. If one Gemini model fails or hits a usage limit, the server tries up to four models in turn within the same request.
+
+Step 5. Confidence gate. For photo-based answers, the app compares the score with a threshold. Above the threshold, it speaks and shows the answer. Below it, it says it is not sure and, in most assistants, offers a human helper.
+
+Step 6. Output. The app speaks the answer in the user's language (using Android Text-to-Speech), shows it on large high-contrast screens and, when needed, connects a volunteer on a live video call.
+
+6. CONFIDENCE-AWARE ASSISTANCE
+- The photo-based assistants (Smart Reading, MedSafe, Surroundings, Object Finder, Currency Reader and Public Transport) return a confidence score between 0 and 1. The AI model reports this score, and the server keeps it within that range. VisionBridge Live is a continuous conversation and is not scored this way.
+- MedSafe does not show a result below 0.70.
+- Surroundings has three levels. Below 0.70, it does not state the description as fact; it offers a volunteer, and a spoken "yes" opens Volunteer Help. From 0.70 to 0.85, it gives the answer with a spoken caution. At 0.85 and above, it answers directly.
+- Below 0.70, Smart Reading shows a clear warning that some words may be wrong and suggests taking the photo again.
+- Currency Reader and Public Transport show a low-confidence message and a "connect to volunteer" button when the score is below 0.65 or nothing is detected.
+- Object Finder offers a volunteer when it cannot find the item.
+- When a spoken command is unclear and the AI's confidence is below 0.70, the app asks a clarifying question instead of acting.
+
+The confidence value is the AI model's own estimate, not a measured accuracy figure. VisionBridge therefore uses it cautiously: as a trigger to be honest and to offer human help, never as a guarantee that an answer is correct.
+
+7. VISIONBRIDGE MEDSAFE: MEDICINE-PACK READING WITH A SAFETY GATE
+Purpose: to make information already printed on medicine packaging accessible through speech and a high-contrast display.
+
+How it works:
+- Capture. The user opens MedSafe by voice ("Vision, check my medicine", also in Hindi and Marathi) or from the home screen. The camera (CameraX, maximum-quality mode) photographs the strip, box, bottle or label.
+- Prepare. The phone rejects empty or corrupted photos, fixes the rotation and compresses the image.
+- Extract. A dedicated Edge Function (medication-extract) sends the image to Gemini with strict instructions and low randomness (temperature). Gemini must extract only what is clearly readable, must never infer or guess missing information, must never diagnose, prescribe or recommend, and must copy printed directions word for word. Medicine and ingredient names keep their standard names even when the app is in Hindi or Marathi.
+- Structure. The result comes back as structured data (JSON) containing:
+  - a status: CLEAR, UNCERTAIN or NO_MEDICATION_TEXT
+  - the printed fields
+  - a confidence score
+  - the reason for any uncertainty
+  - a list of fields that need to be checked
+  The server cleans every field and limits its length. It keeps the status CLEAR only if a medicine name was actually read.
+
+When printed on the pack, MedSafe can read: medicine name, strength, dosage form, active ingredients, printed directions (word for word), expiry date, storage information, printed warnings, manufacturer and batch number.
+
+The safety gate: MedSafe shows a result only if the status is CLEAR, a medicine name was read, and the confidence is at least 0.70.
+- If the result passes, the app speaks a summary ("Medicine: … Strength: … The packaging says: …"). It shows large high-contrast cards with Read aloud, Save and Set reminder buttons. If the printed expiry date has passed, it shows a prominent warning and says: "Please consult a pharmacist or doctor."
+- If the result fails, the app says: "I couldn't confidently read this medicine packaging. I don't want to guess. You can try another photo or connect to a human helper." It shows the confidence against the 70% threshold and the reason. Two large buttons follow: Try another photo, and Connect to human helper. The second opens Volunteer Help with the request marked as medication verification.
+- If no packaging is detected, the app asks the user to point the camera at a medicine strip, box or bottle.
+
+My Medicines. Saved medicines are stored in a database on the phone (SQLite). When the user is signed in, they are also synced to the user's own records in Supabase, which row-level security protects. The user can search, edit, delete or hear any saved medicine, and the list works offline.
+
+Today's Reminders. Daily reminders use Android's alarm system (AlarmManager). They use exact alarms when Android allows them and a fallback otherwise, and they are set again after a restart or a time-zone change. Each reminder raises a high-priority notification with sound and vibration, and its content is hidden on the lock screen. "Hear schedule" reads the day's reminders aloud, and "Test alarm" lets the user check the sound and vibration.
+
+Human verification. The MedSafe home screen has an "Ask volunteer to verify" option for curved, damaged or unclear packaging.
+
+Safety boundary. MedSafe only reads what is printed. The app shows this notice in English, Hindi and Marathi: "Assistive packaging reader only. VisionBridge does not diagnose or prescribe. Always follow your doctor's or pharmacist's instructions." MedSafe does not check whether a medicine is suitable, does not give dosing advice, and does not replace a doctor, a pharmacist, a prescription or professional medical advice.
+
+8. HUMAN IN THE LOOP
+- A help request stores its type and a short description in Supabase, including the reason and confidence score when an AI result triggered it. Volunteers see new requests in real time.
+- When a volunteer accepts, the two apps exchange the connection details for a WebRTC call over Supabase Realtime, and a direct video call starts. STUN and TURN servers are configured so calls can connect on restrictive networks.
+- The call shares the user's rear camera and both voices. The volunteer's camera stays off.
+- Volunteers currently sign up by themselves. A verified volunteer network is future work.
+
+9. ACCESSIBILITY DESIGN
+- Voice-first: the wake word "Vision" (also recognised as "विजन" and "व्हिजन"), commands recognised on the phone, and spoken confirmations and error messages.
+- Three languages across the interface and speech: English, Hindi and Marathi, with 570 interface strings in each.
+- Large, high-contrast cards: dark backgrounds, bright accent colours, and action cards at least 68 dp tall.
+- Screen-reader support: headings and content descriptions throughout, and screen-reader announcements while MedSafe is analysing.
+- Gestures: a two-finger double-tap on any screen starts listening, an optional shake gesture does the same, and the phone vibrates to confirm actions.
+- Every assistant follows the same pattern of speaking the answer and showing it on screen, so learning one assistant teaches all of them.
+
+10. TECHNOLOGY
+- On the phone: Kotlin, Jetpack Compose (Material 3), Navigation Compose, CameraX, Android SpeechRecognizer and TextToSpeech, Google Play Services Fused Location, AndroidX Media3/ExoPlayer and OkHttp. MedSafe also uses SQLite and AlarmManager. The minimum Android version is 7.0 (SDK 24), and the target SDK is 36.
+- Backend: Supabase Auth (JWT sessions that refresh silently); PostgreSQL with row-level security (13 tables, 44 policies); 20 Supabase Edge Functions used by the app (Deno/TypeScript); and Supabase Realtime for call signalling.
+- AI and communication:
+  - the Google Gemini API, which turns images into structured data with a confidence score and falls back across four models
+  - the Gemini Live API for real-time voice conversation, using short-lived ephemeral tokens
+  - WebRTC for volunteer video calls
+  - OpenStreetMap Nominatim and Overpass for addresses and nearby places
+  - the WhatsApp Cloud API for SOS alerts
+
+11. SECURITY AND PRIVACY
+- The Gemini API key is stored only as a server secret. The app holds only the public Supabase project key.
+- Gemini Live sessions use short-lived ephemeral tokens (valid for up to 30 minutes), issued by an Edge Function.
+- All 13 database tables use row-level security, so users can read and change only their own data, such as medicines, reminders, contacts and call logs.
+- Users cannot make themselves admins. A database trigger blocks role changes unless they come from an existing admin or the server.
+- Medicine reminder notifications stay private on the lock screen.
+- In volunteer calls, only the user's camera is shared.
+- Sessions refresh silently, and every admin action is checked against the database.
+
+12. WHAT IS INNOVATIVE
+- Honesty as a feature. Photo-based answers must pass a confidence check, and the app says "I'm not sure" instead of sounding certain. For a user who cannot check an answer by looking, this matters more than any extra feature.
+- A human one step away. When confidence is low, a sighted volunteer can join on live video, and the help request already includes the reason and the confidence score.
+- MedSafe. Medicine-pack reading is built around one principle: "read what is printed, don't guess what isn't". It combines:
+  - a strict three-part check before any result is shown
+  - printed directions read word for word
+  - warnings for packs past their expiry date
+  - a medicine list and reminders that work offline
+  - a direct path to a human for verification
+- One voice for everything. One wake word and one way of interacting cover reading, understanding scenes, money, transport, location, safety and help, in English, Hindi and Marathi.
+- Real-time help with camera and voice together. VisionBridge Live keeps one continuous camera-and-voice conversation instead of asking for repeated photos, and the user can interrupt it.
+- Built to be reliable and secure. Keys stay on the server, Live sessions use short-lived tokens, Gemini falls back across models, and every database table has row-level security.
+
+13. FEASIBILITY AND CURRENT STATUS
+VisionBridge is not just a concept: it already works as a native Android app with a Supabase backend.
+- In the latest local run (14 September 2026), all 93 automated unit tests passed. They cover the confidence check, the MedSafe 0.70 gate, expiry detection, reminder time formatting, voice routing in English, Hindi and Marathi, wake-word matching, follow-up memory, gestures, volunteer request filtering, sign-in, and admin access checks.
+- An end-to-end MedSafe test passed on a real Android phone. A sample medicine label went through the live Edge Function and Gemini. The test then confirmed that the status was CLEAR, that confidence was at least 0.70, that the result contained the medicine name, the active ingredient and the printed directions, and that the pack was not flagged as expired.
+- No special hardware is needed: any phone running Android 7.0 or later with a camera, a microphone and an internet connection works.
+- The app uses managed, pay-as-you-go cloud services and standard Android features. No model training or custom dataset is needed.
+- The design is modular. MedSafe was added with its own screens, Edge Function, database tables and tests. The shared code needed only small additions, such as a navigation route, a home-screen card, voice commands and the reminder permissions.
+
+Viability: VisionBridge can be distributed like any Android app. Cloud costs grow only with actual use, volunteers provide the human support, and new assistants can be added without changing the existing ones.
+
+14. IMPACT AND BENEFITS
+- Social: more independence in reading, travel and handling money, without waiting for someone to be free; inclusion through voice-first use in three languages.
+- Health and safety: users can hear what is printed on their own medicine packs, get daily reminders that work offline, and be warned about expired packs, while the app states clearly that MedSafe does not give medical advice. SOS alerts share the user's live location with trusted contacts.
+- A human safety net: when the AI is unsure, a volunteer can see what the user is pointing the camera at.
+- Economic: the app runs on a phone the user already owns, so there is no dedicated reading device to buy.
+- Environmental: no extra hardware has to be made, charged or thrown away.
+
+Example: At 8:30 PM, a user at home holds a medicine strip. She says "Vision, check my medicine" and photographs the strip. She hears the name, strength, printed directions and expiry date. She saves the medicine and sets a daily 9:00 PM reminder that works without internet. If the photo is blurred, the app tells her it does not want to guess and offers to connect a volunteer.
+
+15. LIMITATIONS (STATED HONESTLY)
+- The AI features need an internet connection: reading, scene description, MedSafe scanning, Live, transport, currency and location lookup. Saved medicines and reminder alarms work offline.
+- The AI model reports its own confidence scores. They are not a clinical or measured accuracy figure. We claim no clinical validation, no regulatory approval and no accuracy figures.
+- MedSafe only reads packaging. It does not diagnose, prescribe, check whether a medicine is suitable or whether medicines interact, or replace professionals. Curved, shiny, torn or very small print may be reported as "uncertain"; this is by design.
+- Obstacle information is available on demand through Surroundings and Live. There is no continuous background hazard detection yet, and VisionBridge does not replace a cane or a guide.
+- Volunteers currently sign up by themselves, and a volunteer is not guaranteed to be available at all times.
+- We do not yet claim any user numbers or field-study results.
+
+16. FUTURE SCOPE
+- Obstacle warnings that run on the phone without internet, and continuous hazard alerts while walking.
+- A verified volunteer network with training and ratings.
+- More Indian languages.
+- A field study with low-vision users to measure real-world benefit.
+- Accuracy testing of MedSafe on real medicine packaging, reviewed by pharmacists.
+- Support for wearables and Bluetooth devices, and indoor navigation aids.
+
+17. LINKS
+- Demo video: https://youtu.be/ok7P_i5SeR4?si=RSto97QplXX83Guj
+- Android source code: https://github.com/shailesh-pande01/visionbridge-app
+- Earlier web prototype: https://visionbridge-ai.vercel.app
+
+18. REFERENCES
+[1] World Health Organization. Blindness and vision impairment (fact sheet, updated 10 February 2026). https://www.who.int/news-room/fact-sheets/detail/blindness-and-visual-impairment
+[2] Vashist P, et al. Blindness and visual impairment and their causes in India: results of a nationally representative survey. PLOS ONE, 2022. https://doi.org/10.1371/journal.pone.0271736
+[3] Merenda T, Depasse F, Patris S. The impact of simulated visual impairment on medication use process: a study with healthy volunteers. Exploratory Research in Clinical and Social Pharmacy, 18:100581, 2025. https://doi.org/10.1016/j.rcsop.2025.100581
+[4] Rights of Persons with Disabilities Act, 2016. Department of Empowerment of Persons with Disabilities, Government of India. https://depwd.gov.in/en/acts/
+
+Team: Prime Innovators · Team ID 135775 · Problem Statement ID 26198 · Student Innovation · MedTech / BioTech / HealthTech · Software
+
+==================================================
+C. ABSTRACT / SUMMARY
+==================================================
+
+VisionBridge is a native Android app that helps people with low vision read, understand their surroundings, get around with more confidence, stay safe and reach a real person. It runs on the phone they already own and works through a single voice command ("Vision…") in English, Hindi and Marathi.
+
+PROBLEM
+Visual information blocks everyday independence: medicine packs, printed notices, bus numbers, obstacles, banknotes, and simply knowing "where am I?". Each of these moments usually depends on someone else being free to help, or on a separate device or app. General AI apps add a new risk: they answer confidently even when an image is unclear, and a person who cannot see cannot check the answer.
+
+The need is large:
+- At least 2.2 billion people worldwide have a near or distance vision impairment (WHO, 2026).
+- In India, 26.68% of people aged 50 and above have visual impairment (national survey, 2015–19).
+- In a 2025 simulation study, 81% of participants with simulated moderate visual impairment could not access medicine names and doses.
+
+SOLUTION
+One Android app brings together the assistants a person needs:
+- Read: Smart Reading and MedSafe.
+- Understand: Surroundings, Object Finder, Currency Reader, VisionBridge Live (a real-time conversation using camera and voice together) and AI Voice Call.
+- Move: Where Am I?, Public Transport and on-demand obstacle checks.
+- Stay safe: Emergency SOS, which sends a WhatsApp alert with the user's location, and medicine reminders.
+- Human help: live video with a sighted volunteer, and a voice-controlled Phone Assistant.
+
+INNOVATION: THE APP ADMITS WHEN IT IS UNSURE
+Gemini returns each photo-based answer as structured data (JSON) with a confidence score. When the score is below the threshold, the app says it is not sure instead of sounding certain, and offers a volunteer:
+- MedSafe and Surroundings do not state a low-confidence answer as fact below 0.70.
+- Currency Reader and Public Transport offer a volunteer below 0.65.
+When a volunteer accepts a help request, a WebRTC video call starts. Only the user's camera is shared.
+
+VISIONBRIDGE MEDSAFE
+MedSafe makes the information printed on medicine packaging accessible. The user photographs a strip, box, bottle or label, and MedSafe reads whichever of these are printed: medicine name, strength, form, active ingredients, printed directions (word for word), expiry date, storage, printed warnings, manufacturer and batch number.
+
+MedSafe shows a result only when three conditions are met: the AI marked the reading as clear, the medicine name was actually read, and confidence is at least 0.70.
+- When the result passes, the app speaks a summary and shows high-contrast cards. It flags packs past their expiry date, and the user can save the medicine and set daily reminders that work offline.
+- When the result fails, the app says: "I couldn't confidently read this medicine packaging. I don't want to guess." It then offers to take another photo or connect a human helper.
+
+MedSafe does not diagnose, prescribe, give dosing advice or replace a doctor or pharmacist, and the app says so in all three languages.
+
+TECHNOLOGY
+- Phone: Kotlin and Jetpack Compose, CameraX, Android SpeechRecognizer and TextToSpeech, Fused Location, Media3, SQLite and AlarmManager.
+- Backend: Supabase Auth, PostgreSQL with row-level security on all 13 tables, 20 Edge Functions and Realtime.
+- AI and communication: Google Gemini, which falls back across four models; Gemini Live with short-lived ephemeral tokens; WebRTC; OpenStreetMap Nominatim and Overpass; and the WhatsApp Cloud API.
+- The Gemini API key never leaves the server.
+
+FEASIBILITY
+- The app already works on Android 7.0 and above, with no extra hardware.
+- In the latest local run (14 September 2026), all 93 unit tests passed, including the MedSafe check and voice commands in English, Hindi and Marathi.
+- An end-to-end MedSafe test passed on a real phone connected to the live backend.
+- No model training or custom dataset is needed.
+- New assistants are added as separate modules.
+
+IMPACT
+- More independence in reading, travel and handling money.
+- Safer medicine routines, based on printed information and reminders rather than advice.
+- Inclusion through voice-first, three-language, high-contrast design.
+- A human safety net when the AI is unsure.
+- Low cost, because it runs on a phone the user already owns.
+
+LIMITS AND NEXT STEPS
+- The AI features need an internet connection; saved medicines and reminders work offline.
+- Confidence is the AI model's own estimate. We claim no clinical validation or accuracy figures.
+- Obstacle checks are on demand, and volunteers currently sign up by themselves.
+- Next: obstacle warnings without internet, a verified volunteer network, more Indian languages, a field study with low-vision users, and pharmacist-reviewed testing of MedSafe.
+
+Demo: https://youtu.be/ok7P_i5SeR4?si=RSto97QplXX83Guj
+Code: https://github.com/shailesh-pande01/visionbridge-app
+
+==================================================
+D. ONE-LINE PITCH
+==================================================
+
+VisionBridge is a voice-first Android companion that helps people with low vision read, understand, move, stay safe and reach a real person — and when its AI isn't sure, it says so instead of guessing, with MedSafe bringing that same honesty to reading medicine packs.

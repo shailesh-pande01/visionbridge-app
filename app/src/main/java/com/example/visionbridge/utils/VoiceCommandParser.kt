@@ -9,6 +9,7 @@ enum class VoiceIntent {
     WHERE_AM_I,
     VOLUNTEER_HELP,
     EMERGENCY_SOS,
+    MEDICATION_SAFETY,
     HOME,
     UNKNOWN
 }
@@ -90,6 +91,15 @@ object VoiceCommandParser {
             }
         }
 
+        // 6b. Medication Safety
+        val medicationKeywords = listOf(
+            "medicine", "medication", "medsafe", "pill", "tablet", "capsule", "prescription",
+            "दवा", "दवाई", "औषध", "गोली", "गोळी", "गोळ्या", "माझे औषध", "औषधाची"
+        )
+        if (medicationKeywords.any { cleaned.contains(it) }) {
+            return ParsedVoiceCommand(VoiceIntent.MEDICATION_SAFETY, rawCommand = trimmed)
+        }
+
         // 7. Smart Reading
         val readingKeywords = listOf(
             "read", "text", "menu", "sign", "label", "document", "book", "read this", "read for me",
@@ -130,6 +140,7 @@ object VoiceCommandParser {
             VoiceIntent.WHERE_AM_I -> "location"
             VoiceIntent.VOLUNTEER_HELP -> "volunteer"
             VoiceIntent.EMERGENCY_SOS -> "sos"
+            VoiceIntent.MEDICATION_SAFETY -> "medication"
             VoiceIntent.HOME -> "home"
             VoiceIntent.UNKNOWN -> null
         }

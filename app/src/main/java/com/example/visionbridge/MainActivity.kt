@@ -61,6 +61,7 @@ import com.example.visionbridge.ui.screens.admin.AdminDashboardScreen
 import com.example.visionbridge.ui.screens.admin.AdminLoginScreen
 import com.example.visionbridge.ui.theme.BgPrimary
 import com.example.visionbridge.ui.theme.VisionbridgeTheme
+import com.example.visionbridge.ui.screens.medication.MedicationSafetyScreen
 import com.example.visionbridge.voice.VoiceManager
 
 class MainActivity : ComponentActivity() {
@@ -154,6 +155,7 @@ fun VisionBridgeApp() {
             currentRoute.startsWith("progress") -> "progress"
             currentRoute.startsWith("calling") -> "calling"
             currentRoute.startsWith("news") -> "news"
+            currentRoute.startsWith("medication") -> "medication"
             currentRoute.startsWith("admin") -> "admin"
             else -> "home"
         }
@@ -444,6 +446,23 @@ fun VisionBridgeApp() {
                             navController.navigate("auth") {
                                 popUpTo(0) { inclusive = true }
                             }
+                        }
+                    )
+                }
+
+                // 10. Medication Safety (AAVISHKAR 2026-2027 Medicine & Pharmacy)
+                composable("medication") {
+                    MedicationSafetyScreen(
+                        onBack = {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
+                        onVolunteerHelp = { reqType, desc ->
+                            val encodedType = java.net.URLEncoder.encode(reqType, "UTF-8")
+                            val encodedDesc = java.net.URLEncoder.encode(desc, "UTF-8")
+                            navController.navigate("volunteer?type=$encodedType&desc=$encodedDesc")
                         }
                     )
                 }
