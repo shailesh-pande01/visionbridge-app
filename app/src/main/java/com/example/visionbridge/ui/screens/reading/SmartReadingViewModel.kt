@@ -1,9 +1,12 @@
 package com.example.visionbridge.ui.screens.reading
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.visionbridge.api.ApiResult
 import com.example.visionbridge.data.SmartReadingRepository
+import com.example.visionbridge.ocr.OfflineOcrEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,21 +56,33 @@ sealed interface ReadingUiState {
     }
 }
 
-class SmartReadingViewModel(
-    private val repository: SmartReadingRepository = SmartReadingRepository()
-) : ViewModel() {
+class SmartReadingViewModel @JvmOverloads constructor(
+    application: Application,
+    private val repository: SmartReadingRepository = SmartReadingRepository(application)
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<ReadingUiState>(ReadingUiState.Camera)
     val uiState: StateFlow<ReadingUiState> = _uiState.asStateFlow()
 
     private val outcomeIds = AtomicLong(0)
 
+    init {
+        // Pre-warm the offline OCR sessions on ViewModel creation
+        viewModelScope.launch {
+            try {
+                OfflineOcrEngine.getInstance(application).warmUp()
+            } catch (e: Throwable) {
+                Log.w("VB-OfflineOcr", "Engine warm-up deferred: ${e.message}")
+            }
+        }
+    }
+
     /** Called the moment the shutter is tapped, before the image is available. */
     fun onCaptureStarted() {
         _uiState.value = ReadingUiState.Processing
     }
 
-    /** CameraX handed us JPEG bytes — optimize, upload, and publish the outcome. */
+    /** CameraX handed us JPEG bytes — optimize, run OCR, and publish the outcome. */
     fun onImageCaptured(imageBytes: ByteArray, rotationDegrees: Int, language: String = "en") {
         _uiState.value = ReadingUiState.Processing
 
@@ -99,7 +114,7 @@ class SmartReadingViewModel(
                             id = outcomeIds.incrementAndGet(),
                             text = text,
                             confidence = extraction.confidence,
-                            // Same 0.70 bar the web client uses to flag an unreliable read.
+                            // Same 0.70 bar used to flag an unreliable read.
                             isLowConfidence = isLow
                         )
                     }

@@ -1,0 +1,6 @@
+{
+  "model": "en_PP-OCRv5_mobile_rec_pretrained",
+  "acc": 0.687499785156317,
+  "norm_edit_dis": 0.8874307034679485,
+  "val_samples": 50
+}

@@ -114,6 +114,7 @@
     <string name="reading_talkback_read_again">Read again. Repeats the text aloud.</string>
     <string name="reading_talkback_stop">Stop reading aloud.</string>
     <string name="reading_talkback_capture_again">Capture again. Reopens the camera.</string>
+    <string name="reading_no_text_actionable">I couldn\'t find readable text. Hold the phone 20 to 30 cm from the text, add more light, and try again.</string>
 
     <string name="feature_surroundings">Describe Surroundings</string>
     <string name="feature_surroundings_sub">Describe what is in front of you</string>

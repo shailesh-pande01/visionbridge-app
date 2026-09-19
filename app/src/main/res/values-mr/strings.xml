@@ -114,6 +114,7 @@
     <string name="reading_talkback_read_again">पुन्हा ऐका. मजकूर पुन्हा मोठ्याने वाचतो.</string>
     <string name="reading_talkback_stop">वाचन थांबवा.</string>
     <string name="reading_talkback_capture_again">पुन्हा स्कॅन करा. कॅमेरा पुन्हा उघडतो.</string>
+    <string name="reading_no_text_actionable">मला वाचता येण्याजोगा कोणताही मजकूर सापडला नाही. फोन मजकुरापासून 20 ते 30 सेमी अंतरावर धरा, अधिक प्रकाश द्या आणि पुन्हा प्रयत्न करा.</string>
 
     <string name="feature_surroundings">परिसराचे वर्णन</string>
     <string name="feature_surroundings_sub">आपल्या समोरील परिसराची माहिती घ्या</string>

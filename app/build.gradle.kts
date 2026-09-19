@@ -148,4 +148,7 @@ dependencies {
     implementation("androidx.media3:media3-session:${media3_version}")
     implementation("androidx.media3:media3-ui:${media3_version}")
     implementation("androidx.media3:media3-common:${media3_version}")
+
+    // ONNX Runtime for Offline OCR
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.30.0")
 }

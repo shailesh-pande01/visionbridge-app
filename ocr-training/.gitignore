@@ -1,0 +1,6 @@
+data/
+models/*.pdparams
+logs/
+*.zip
+.venv/
+PaddleOCR/

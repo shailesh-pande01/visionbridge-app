@@ -114,6 +114,7 @@
     <string name="reading_talkback_read_again">फिर सुनाएँ। टेक्स्ट को दोबारा बोलकर सुनाता है।</string>
     <string name="reading_talkback_stop">बोलना बंद करें।</string>
     <string name="reading_talkback_capture_again">फिर से स्कैन करें। कैमरा फिर से खोलता है।</string>
+    <string name="reading_no_text_actionable">मुझे कोई पढ़ने योग्य टेक्स्ट नहीं मिला। फ़ोन को टेक्स्ट से 20 से 30 सेमी दूर रखें, रोशनी बढ़ाएं और पुनः प्रयास करें।</string>
 
     <string name="feature_surroundings">आसपास का विवरण</string>
     <string name="feature_surroundings_sub">आपके सामने क्या है समझें</string>
